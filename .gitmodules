@@ -1,0 +1,3 @@
+[submodule "src/Hkdf"]
+	path = src/Hkdf
+	url = https://github.com/httpv3/Hkdf.git
