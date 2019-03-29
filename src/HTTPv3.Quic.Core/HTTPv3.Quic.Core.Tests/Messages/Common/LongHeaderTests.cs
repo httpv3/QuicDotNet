@@ -29,7 +29,7 @@ namespace HTTPv3.Quic.Messages.Common
             Assert.IsTrue(destConnId.SequenceEqual(header.DestinationConnID));
             Assert.IsTrue(sourceConnId.SequenceEqual(header.SourceConnID));
 
-            Assert.AreEqual(22, header.Length);
+            Assert.AreEqual(22, header.HeaderBytes.Length);
         }
 
         [TestMethod]
@@ -118,7 +118,7 @@ namespace HTTPv3.Quic.Messages.Common
             Assert.IsTrue(destConnId.SequenceEqual(header.DestinationConnID));
             Assert.IsTrue(sourceConnId.SequenceEqual(header.SourceConnID));
 
-            Assert.AreEqual(14, header.Length);
+            Assert.AreEqual(14, header.HeaderBytes.Length);
         }
 
         [TestMethod]
@@ -143,7 +143,7 @@ namespace HTTPv3.Quic.Messages.Common
             Assert.IsTrue(destConnId.SequenceEqual(header.DestinationConnID));
             Assert.IsTrue(sourceConnId.SequenceEqual(header.SourceConnID));
 
-            Assert.AreEqual(14, header.Length);
+            Assert.AreEqual(14, header.HeaderBytes.Length);
         }
     }
 }

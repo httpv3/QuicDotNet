@@ -18,4 +18,8 @@
     <ProjectReference Include="..\HTTPv3.Quic.Core\HTTPv3.Quic.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="TLS\Data\1\" />
+  </ItemGroup>
+
 </Project>

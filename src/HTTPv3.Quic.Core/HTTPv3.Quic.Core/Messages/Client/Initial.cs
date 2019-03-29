@@ -8,6 +8,7 @@ namespace HTTPv3.Quic.Messages.Client
 {
     internal readonly ref struct Initial
     {
+        public readonly LongHeader Header;
         public readonly ReadOnlySpan<byte> Token;
 
         public readonly int Length;
@@ -17,9 +18,11 @@ namespace HTTPv3.Quic.Messages.Client
 
         public Initial(ReadOnlySpan<byte> packet, LongHeader header)
         {
+            Header = header;
+
             if (header.LongPacketType != LongHeaderPacketTypes.Initial) throw new InitialParsingException($"Long Header is of type {header.LongPacketType}");
 
-            var afterHeader = packet.Slice(header.Length);
+            var afterHeader = packet.Slice(header.HeaderBytes.Length);
 
 
             int tokenLength;

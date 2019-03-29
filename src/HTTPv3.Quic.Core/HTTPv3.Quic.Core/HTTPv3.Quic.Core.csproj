@@ -11,7 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="BouncyCastle" Version="1.8.5" />
     <PackageReference Include="System.Memory" Version="4.5.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Hkdf\Hkdf\Hkdf.csproj" />
   </ItemGroup>
 
 </Project>

@@ -23,7 +23,7 @@ namespace HTTPv3.Quic.Messages
             string fullFileName = $"../../../Messages/Data/{setNum}/{filename}";
             FileInfo fi = new FileInfo(fullFileName);
             if (!fi.Exists)
-                throw new FileNotFoundException($"Cannot find {fi.FullName}");
+                return null;
 
             return File.ReadAllBytes(fullFileName);
         }

@@ -12,7 +12,7 @@ namespace HTTPv3.Quic.Messages.Common
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-17.2
     internal readonly ref struct LongHeader
     {
-        public readonly int Length;
+        public readonly ReadOnlySpan<byte> HeaderBytes;
 
         public readonly LongHeaderPacketTypes LongPacketType;
         public readonly byte TypeSpecificBits;
@@ -44,9 +44,11 @@ namespace HTTPv3.Quic.Messages.Common
 
             int destionationConnIdOffset = Header.StartOfConnIDsOffset;
             int sourceConnIdOffset = destionationConnIdOffset + DCIL;
-            Length = sourceConnIdOffset + SCIL;
+            var length = sourceConnIdOffset + SCIL;
 
-            if (packet.Length < Length) throw new LongHeaderParsingException($"Computed Size of Long Header is {Length} only {packet.Length} bytes available.");
+            if (packet.Length < length) throw new LongHeaderParsingException($"Computed Size of Long Header is {length} only {packet.Length} bytes available.");
+
+            HeaderBytes = packet.Slice(0, length);
 
             DestinationConnID = DCIL == 0 ? ReadOnlySpan<byte>.Empty : packet.Slice(destionationConnIdOffset, DCIL);
             SourceConnID = SCIL == 0 ? ReadOnlySpan<byte>.Empty : packet.Slice(sourceConnIdOffset, SCIL);
