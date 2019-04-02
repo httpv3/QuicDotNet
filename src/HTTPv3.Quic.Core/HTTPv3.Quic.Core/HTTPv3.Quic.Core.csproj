@@ -7,16 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Messages\Server\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="BouncyCastle" Version="1.8.5" />
+    <PackageReference Include="BouncyCastle.NetCore" Version="1.8.5" />
+    <PackageReference Include="System.Data.HashFunction.FNV" Version="2.0.0" />
     <PackageReference Include="System.Memory" Version="4.5.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Hkdf\Hkdf\Hkdf.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Messages\Server\" />
   </ItemGroup>
 
 </Project>

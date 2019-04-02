@@ -4,7 +4,11 @@ using System.Text;
 
 namespace HTTPv3.Quic
 {
-    public class ConnectionState
+    public enum ConnectionState
     {
+        NotConnected = 0,
+        Connecting,
+        Connected,
+        Disconnecting
     }
 }

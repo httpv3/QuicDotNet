@@ -32,5 +32,10 @@ namespace HTTPv3.Quic.Messages.Common
         public const byte SCILMask = 0x0F;
 
         public const int StartOfConnIDsOffset = 6;
+
+        public static bool IsLongHeader(ref Packet packet)
+        {
+            return (packet.Bytes[HeaderFormOffset] & HeaderFormMask) > 0;
+        }
     }
 }

@@ -10,12 +10,12 @@ namespace HTTPv3.Quic.Messages.Common
     // IETF quic-transport draft-19
     // 17.2.  Long Header Packets
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-17.2
-    internal readonly ref struct LongHeader
+    internal ref struct LongHeader
     {
         public readonly ReadOnlySpan<byte> HeaderBytes;
 
         public readonly LongHeaderPacketTypes LongPacketType;
-        public readonly byte TypeSpecificBits;
+        public byte? TypeSpecificBits;
 
         public readonly ReadOnlySpan<byte> Version;
         public readonly VersionTypes VersionType;
@@ -25,33 +25,40 @@ namespace HTTPv3.Quic.Messages.Common
         public readonly ReadOnlySpan<byte> SourceConnID;
 
 
-        public LongHeader(ReadOnlySpan<byte> packet)
+        public LongHeader(ref Packet packet)
         {
-            if (packet.Length < Header.StartOfConnIDsOffset) throw new LongHeaderParsingException($"Minimum Size of Long Header is {Header.StartOfConnIDsOffset} bytes long.");
+            if (packet.Bytes.Length < Header.StartOfConnIDsOffset) throw new LongHeaderParsingException($"Minimum Size of Long Header is {Header.StartOfConnIDsOffset} bytes long.");
 
-            if ((packet[Header.HeaderFormOffset] & Header.HeaderFormMask) == 0) throw new LongHeaderParsingException("Error trying to parse non Long Header into Long Header.");
+            if ((packet.Bytes[Header.HeaderFormOffset] & Header.HeaderFormMask) == 0) throw new LongHeaderParsingException("Error trying to parse non Long Header into Long Header.");
 
-            if ((packet[Header.FixedBitOffset] & Header.FixedBitMask) == 0) throw new LongHeaderParsingException("Fixed bit is 0.");
+            if ((packet.Bytes[Header.FixedBitOffset] & Header.FixedBitMask) == 0) throw new LongHeaderParsingException("Fixed bit is 0.");
 
-            LongPacketType = (LongHeaderPacketTypes)((packet[Header.LongPacketTypeOffset] & Header.LongPacketTypeMask) >> Header.LongPacketTypeShift);
-            TypeSpecificBits = (byte)(packet[Header.TypeSpecificBitsOffset] & Header.TypeSpecificBitsMask);
+            LongPacketType = (LongHeaderPacketTypes)((packet.Bytes[Header.LongPacketTypeOffset] & Header.LongPacketTypeMask) >> Header.LongPacketTypeShift);
+            TypeSpecificBits = null;
 
-            Version = packet.Slice(Header.VersionOffset, Header.VersionLength);
+            Version = packet.Bytes.Slice(Header.VersionOffset, Header.VersionLength);
             VersionType = ParseVersionType(Version);
 
-            int DCIL = ParseConnIDLength((byte)((packet[Header.DCILOffset] & Header.DCILMask) >> Header.DCILShift));
-            int SCIL = ParseConnIDLength((byte)((packet[Header.SCILOffset] & Header.SCILMask)));
+            int DCIL = ParseConnIDLength((byte)((packet.Bytes[Header.DCILOffset] & Header.DCILMask) >> Header.DCILShift));
+            int SCIL = ParseConnIDLength((byte)((packet.Bytes[Header.SCILOffset] & Header.SCILMask)));
 
             int destionationConnIdOffset = Header.StartOfConnIDsOffset;
             int sourceConnIdOffset = destionationConnIdOffset + DCIL;
             var length = sourceConnIdOffset + SCIL;
 
-            if (packet.Length < length) throw new LongHeaderParsingException($"Computed Size of Long Header is {length} only {packet.Length} bytes available.");
+            if (packet.Bytes.Length < length) throw new LongHeaderParsingException($"Computed Size of Long Header is {length} only {packet.Bytes.Length} bytes available.");
 
-            HeaderBytes = packet.Slice(0, length);
+            HeaderBytes = packet.Bytes.Slice(0, length);
 
-            DestinationConnID = DCIL == 0 ? ReadOnlySpan<byte>.Empty : packet.Slice(destionationConnIdOffset, DCIL);
-            SourceConnID = SCIL == 0 ? ReadOnlySpan<byte>.Empty : packet.Slice(sourceConnIdOffset, SCIL);
+            DestinationConnID = DCIL == 0 ? ReadOnlySpan<byte>.Empty : packet.Bytes.Slice(destionationConnIdOffset, DCIL);
+            SourceConnID = SCIL == 0 ? ReadOnlySpan<byte>.Empty : packet.Bytes.Slice(sourceConnIdOffset, SCIL);
+        }
+
+        internal void RemoveHeaderProtection(ref Packet p)
+        {
+            p.Bytes[0] ^= (byte)(p.HeaderProtectionMask[0] & 0xF);
+
+            TypeSpecificBits = (byte)(HeaderBytes[Header.TypeSpecificBitsOffset] & Header.TypeSpecificBitsMask);
         }
 
         public static int ParseConnIDLength(byte field)
@@ -59,11 +66,6 @@ namespace HTTPv3.Quic.Messages.Common
             if (field == 0x0) return 0x0;
 
             return field + 3;
-        }
-
-        public static int ParsePacketNumberLength(ReadOnlySpan<byte> packet)
-        {
-            return (packet[Header.PacketNumberLengthOffset] & Header.PacketNumberLengthMask) +1;
         }
 
         public static VersionTypes ParseVersionType(ReadOnlySpan<byte> version)

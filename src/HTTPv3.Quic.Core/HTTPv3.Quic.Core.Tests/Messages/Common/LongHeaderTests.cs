@@ -1,8 +1,6 @@
 ﻿using HTTPv3.Quic.Exceptions.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace HTTPv3.Quic.Messages.Common
 {
@@ -12,17 +10,17 @@ namespace HTTPv3.Quic.Messages.Common
         [TestMethod]
         public void HappyPathSet1()
         {
-            var packet = MessageSets.Set1.Client_Initial;
+            var packet = new Packet(MessageSets.Set1.Client_Initial, true);
 
             var version = new ReadOnlySpan<byte>("ff000012".ToByteArrayFromHex());
             var versionType = VersionTypes.Draft_18;
             var destConnId = new ReadOnlySpan<byte>("d65881936984fbb3".ToByteArrayFromHex());
             var sourceConnId = new ReadOnlySpan<byte>("928f811fcf9b1d12".ToByteArrayFromHex());
 
-            var header = new LongHeader(packet);
+            var header = new LongHeader(ref packet);
 
             Assert.AreEqual(LongHeaderPacketTypes.Initial, header.LongPacketType);
-            Assert.AreEqual(0x9, header.TypeSpecificBits);
+            Assert.AreEqual(null, header.TypeSpecificBits);
             Assert.IsTrue(version.SequenceEqual(header.Version));
             Assert.AreEqual(versionType, header.VersionType);
 
@@ -35,35 +33,45 @@ namespace HTTPv3.Quic.Messages.Common
         [TestMethod]
         public void ThrowExceptionIfNotLongHeader()
         {
-            var packet = MessageSets.Set1.Client_Initial;
-            packet[0] ^= 0x80;
+            var bytes = MessageSets.Set1.Client_Initial;
+            bytes[0] ^= 0x80;
 
-            Assert.ThrowsException<LongHeaderParsingException>(() => new LongHeader(packet));
+            Assert.ThrowsException<LongHeaderParsingException>(() => { var p = new Packet(bytes, true); new LongHeader(ref p); });
         }
 
         [TestMethod]
         public void ThrowExceptionIfFixedBitIsZero()
         {
-            var packet = MessageSets.Set1.Client_Initial;
-            packet[0] ^= 0x40;
+            var bytes = MessageSets.Set1.Client_Initial;
+            bytes[0] ^= 0x40;
 
-            Assert.ThrowsException<LongHeaderParsingException>(() => new LongHeader(packet));
+            Assert.ThrowsException<LongHeaderParsingException>(() =>
+            {
+                var p = new Packet(bytes, true);
+                new LongHeader(ref p);
+            });
         }
 
         [TestMethod]
         public void ThrowExceptionIfTooSmall()
         {
-            var packet = MessageSets.Set1.Client_Initial;
+            var bytes = MessageSets.Set1.Client_Initial;
 
             int wayTooSmall = 5;
             int tooSmallForIdLength = 21;
             int justRight = 22;
 
-            Assert.ThrowsException<LongHeaderParsingException>(() => new LongHeader(new ReadOnlySpan<byte>(packet, 0, wayTooSmall)));
+            Assert.ThrowsException<LongHeaderParsingException>(() => {
+                var p = new Packet(new Span<byte>(bytes, 0, wayTooSmall), true);
+                new LongHeader(ref p);
+            });
+            Assert.ThrowsException<LongHeaderParsingException>(() => {
+                var p = new Packet(new Span<byte>(bytes, 0, tooSmallForIdLength), true);
+                new LongHeader(ref p);
+            });
 
-            Assert.ThrowsException<LongHeaderParsingException>(() => new LongHeader(new ReadOnlySpan<byte>(packet, 0, tooSmallForIdLength)));
-
-            var good = new LongHeader(new ReadOnlySpan<byte>(packet, 0, justRight));
+            var goodP = new Packet(new Span<byte>(bytes, 0, justRight), true);
+            var good = new LongHeader(ref goodP);
         }
 
         [TestMethod]
@@ -73,16 +81,6 @@ namespace HTTPv3.Quic.Messages.Common
             Assert.AreEqual(4, LongHeader.ParseConnIDLength(0x1));
             Assert.AreEqual(8, LongHeader.ParseConnIDLength(0x5));
             Assert.AreEqual(18, LongHeader.ParseConnIDLength(0xF));
-        }
-
-        [TestMethod]
-        public void TestParsePacketNumberLength()
-        {
-            Assert.AreEqual(1, LongHeader.ParsePacketNumberLength(new byte[] { 0x0 }));
-            Assert.AreEqual(2, LongHeader.ParsePacketNumberLength(new byte[] { 0x1 }));
-            Assert.AreEqual(3, LongHeader.ParsePacketNumberLength(new byte[] { 0x2 }));
-            Assert.AreEqual(4, LongHeader.ParsePacketNumberLength(new byte[] { 0x3 }));
-            Assert.AreEqual(1, LongHeader.ParsePacketNumberLength(new byte[] { 0xF0 }));
         }
 
         [TestMethod]
@@ -99,19 +97,19 @@ namespace HTTPv3.Quic.Messages.Common
         [TestMethod]
         public void NoDestinationConnId()
         {
-            var packet = MessageSets.Set1.Client_Initial;
+            var packet = new Packet(MessageSets.Set1.Client_Initial, true);
 
             var version = new ReadOnlySpan<byte>("ff000012".ToByteArrayFromHex());
             var versionType = VersionTypes.Draft_18;
             var destConnId = ReadOnlySpan<byte>.Empty;
             var sourceConnId = new ReadOnlySpan<byte>("d65881936984fbb3".ToByteArrayFromHex());
 
-            packet[5] &= 0x0f; // Zero out the DCIL
+            packet.Bytes[5] &= 0x0f; // Zero out the DCIL
 
-            var header = new LongHeader(packet);
+            var header = new LongHeader(ref packet);
 
             Assert.AreEqual(LongHeaderPacketTypes.Initial, header.LongPacketType);
-            Assert.AreEqual(0x9, header.TypeSpecificBits);
+            Assert.AreEqual(null, header.TypeSpecificBits);
             Assert.IsTrue(version.SequenceEqual(header.Version));
             Assert.AreEqual(versionType, header.VersionType);
 
@@ -124,19 +122,19 @@ namespace HTTPv3.Quic.Messages.Common
         [TestMethod]
         public void NoSourceConnId()
         {
-            var packet = MessageSets.Set1.Client_Initial;
+            var packet = new Packet(MessageSets.Set1.Client_Initial, true);
 
             var version = new ReadOnlySpan<byte>("ff000012".ToByteArrayFromHex());
             var versionType = VersionTypes.Draft_18;
             var destConnId = new ReadOnlySpan<byte>("d65881936984fbb3".ToByteArrayFromHex());
             var sourceConnId = ReadOnlySpan<byte>.Empty;
 
-            packet[5] &= 0xf0; // Zero out the SCIL
+            packet.Bytes[5] &= 0xf0; // Zero out the SCIL
 
-            var header = new LongHeader(packet);
+            var header = new LongHeader(ref packet);
 
             Assert.AreEqual(LongHeaderPacketTypes.Initial, header.LongPacketType);
-            Assert.AreEqual(0x9, header.TypeSpecificBits);
+            Assert.AreEqual(null, header.TypeSpecificBits);
             Assert.IsTrue(version.SequenceEqual(header.Version));
             Assert.AreEqual(versionType, header.VersionType);
 

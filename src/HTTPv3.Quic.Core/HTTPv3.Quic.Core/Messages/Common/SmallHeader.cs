@@ -4,7 +4,7 @@ using System.Text;
 
 namespace HTTPv3.Quic.Messages.Common
 {
-    internal class SmallHeader
+    public readonly ref struct SmallHeader
     {
     }
 }
