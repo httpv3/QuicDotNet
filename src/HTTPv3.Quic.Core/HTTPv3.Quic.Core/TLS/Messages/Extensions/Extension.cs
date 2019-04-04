@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HTTPv3.Quic.Messages.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -39,6 +40,8 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
                     return new PskKeyExchangeModes(extBytes);
                 case ExtensionType.ApplicationLayerProtocolNegotiation:
                     return new ApplicationLayerProtocolNegotiation(extBytes);
+                case ExtensionType.QuicTransportParameters:
+                    return new TransportParameters(extBytes);
                 default:
                     return null;
             }

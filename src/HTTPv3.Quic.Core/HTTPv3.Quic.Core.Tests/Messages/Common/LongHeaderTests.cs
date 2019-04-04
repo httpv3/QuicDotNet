@@ -14,8 +14,8 @@ namespace HTTPv3.Quic.Messages.Common
 
             var version = new ReadOnlySpan<byte>("ff000012".ToByteArrayFromHex());
             var versionType = VersionTypes.Draft_18;
-            var destConnId = new ReadOnlySpan<byte>("d65881936984fbb3".ToByteArrayFromHex());
-            var sourceConnId = new ReadOnlySpan<byte>("928f811fcf9b1d12".ToByteArrayFromHex());
+            var destConnId = new ReadOnlySpan<byte>("174d1953def9d2c2".ToByteArrayFromHex());
+            var sourceConnId = new ReadOnlySpan<byte>("2a854833d96efe9c".ToByteArrayFromHex());
 
             var header = new LongHeader(ref packet);
 
@@ -102,7 +102,7 @@ namespace HTTPv3.Quic.Messages.Common
             var version = new ReadOnlySpan<byte>("ff000012".ToByteArrayFromHex());
             var versionType = VersionTypes.Draft_18;
             var destConnId = ReadOnlySpan<byte>.Empty;
-            var sourceConnId = new ReadOnlySpan<byte>("d65881936984fbb3".ToByteArrayFromHex());
+            var sourceConnId = new ReadOnlySpan<byte>("174d1953def9d2c2".ToByteArrayFromHex());
 
             packet.Bytes[5] &= 0x0f; // Zero out the DCIL
 
@@ -126,7 +126,7 @@ namespace HTTPv3.Quic.Messages.Common
 
             var version = new ReadOnlySpan<byte>("ff000012".ToByteArrayFromHex());
             var versionType = VersionTypes.Draft_18;
-            var destConnId = new ReadOnlySpan<byte>("d65881936984fbb3".ToByteArrayFromHex());
+            var destConnId = new ReadOnlySpan<byte>("174d1953def9d2c2".ToByteArrayFromHex());
             var sourceConnId = ReadOnlySpan<byte>.Empty;
 
             packet.Bytes[5] &= 0xf0; // Zero out the SCIL

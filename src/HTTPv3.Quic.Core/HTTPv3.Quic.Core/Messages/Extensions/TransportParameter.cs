@@ -27,6 +27,11 @@ namespace HTTPv3.Quic.Messages.Extensions
             {
                 case TransportParameterId.IdleTimeout:
                 case TransportParameterId.InitialMaxData:
+                case TransportParameterId.InitialMaxStreamDataBidiLocal:
+                case TransportParameterId.InitialMaxStreamDataBidiRemote:
+                case TransportParameterId.InitialMaxStreamDataUni:
+                case TransportParameterId.InitialMaxStreamsBidi:
+                case TransportParameterId.InitialMaxStreamsUni:
                 case TransportParameterId.MaxPacketSize:
                     return new TransportParameterNumber(type, extBytes);
                 default:
