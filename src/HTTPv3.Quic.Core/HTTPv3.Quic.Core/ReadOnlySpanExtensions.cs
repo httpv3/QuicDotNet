@@ -8,11 +8,29 @@ namespace HTTPv3.Quic
 {
     public static class ReadOnlySpanExtensions
     {
-        public static ReadOnlySpan<byte> ReadNextBytes(this ReadOnlySpan<byte> bytesIn, int numBytes, out ReadOnlySpan<byte> bytesToRead)
+        public static ReadOnlySpan<byte> ReadNextByte(this ReadOnlySpan<byte> bytesIn, out byte byteOut)
+        {
+            if (bytesIn.Length < 1) throw new NotEnoughBytesException($"Expecting 1 bytes but only have {bytesIn.Length} bytes left.");
+
+            byteOut = bytesIn[0];
+
+            return bytesIn.Slice(1);
+        }
+
+        public static ReadOnlySpan<byte> ReadNextBytes(this ReadOnlySpan<byte> bytesIn, int numBytes, out byte[] bytesOut)
         {
             if (bytesIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bytesIn.Length} bytes left.");
 
-            bytesToRead = bytesIn.Slice(0, numBytes);
+            bytesOut = bytesIn.Slice(0, numBytes).ToArray();
+
+            return bytesIn.Slice(numBytes);
+        }
+
+        public static ReadOnlySpan<byte> ReadNextBytes(this ReadOnlySpan<byte> bytesIn, int numBytes, out ReadOnlySpan<byte> bytesOut)
+        {
+            if (bytesIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bytesIn.Length} bytes left.");
+
+            bytesOut = bytesIn.Slice(0, numBytes);
 
             return bytesIn.Slice(numBytes);
         }
@@ -24,6 +42,16 @@ namespace HTTPv3.Quic
             value = bytesIn.Slice(0, numBytes).ToUInt32();
 
             return bytesIn.Slice(numBytes);
+        }
+
+        public static ReadOnlySpan<byte> ReadNextTLSVariableLength(this ReadOnlySpan<byte> bytesIn, int lengthNumBytes, out ReadOnlySpan<byte> bytesOut)
+        {
+            if (bytesIn.Length < lengthNumBytes) throw new NotEnoughBytesException($"Expecting {lengthNumBytes} bytes but only have {bytesIn.Length} bytes left.");
+
+            bytesIn = bytesIn.ReadNextNumber(lengthNumBytes, out var length);
+            if (bytesIn.Length < length) throw new NotEnoughBytesException($"Expecting {length} bytes but only have {bytesIn.Length} bytes left.");
+
+            return bytesIn.ReadNextBytes((int)length, out bytesOut);
         }
 
         public static ReadOnlySpan<byte> ReadNextVariableInt(this ReadOnlySpan<byte> bytesIn, out int value)
