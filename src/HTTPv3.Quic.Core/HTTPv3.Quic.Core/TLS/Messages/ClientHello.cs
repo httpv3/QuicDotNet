@@ -6,24 +6,25 @@ namespace HTTPv3.Quic.TLS.Messages
 {
     internal class ClientHello : Handshake
     {
-        public const int ProtocolVersionNumBytes = 2;
-        public const int RandomNumBytes = 32;
-        public const int LegacySessionIdLengthNumBytes = 1;
-        public const int CipherSuitesLengthNumBytes = 2;
-        public const int LegacyCompressionMethodsNumBytes = 2;
-        public const int ExtensionsLengthNumBytes = 2;
+        public const int ProtocolVersion_NumBytes = 2;
+        public const int Random_NumBytes = 32;
+        public const int LegacySessionIdLength_NumBytes = 1;
+        public const int CipherSuitesLength_NumBytes = 2;
+        public const int LegacyCompressionMethods_NumBytes = 2;
+        public const int ExtensionsLength_NumBytes = 2;
+
         public uint ProtocolVersion;
         public byte[] Random;
         public List<Extensions.Extension> ExtensionList = new List<Extensions.Extension>();
 
         public ClientHello(ReadOnlySpan<byte> data) : base(HandshakeType.ClientHello)
         {
-            data = data.ReadNextNumber(ProtocolVersionNumBytes, out ProtocolVersion);
-            data = data.ReadNextBytes(RandomNumBytes, out Random);
-            data = data.ReadNextTLSVariableLength(LegacySessionIdLengthNumBytes, out var legacySessionId);
-            data = data.ReadNextTLSVariableLength(CipherSuitesLengthNumBytes, out var cipherSuiteBytes);
-            data = data.ReadNextBytes(LegacyCompressionMethodsNumBytes, out ReadOnlySpan<byte> legacyCompressionMethods);
-            data = data.ReadNextTLSVariableLength(ExtensionsLengthNumBytes, out var extensionBytes);
+            data = data.ReadNextNumber(ProtocolVersion_NumBytes, out ProtocolVersion);
+            data = data.ReadNextBytes(Random_NumBytes, out Random);
+            data = data.ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out var legacySessionId);
+            data = data.ReadNextTLSVariableLength(CipherSuitesLength_NumBytes, out var cipherSuiteBytes);
+            data = data.ReadNextBytes(LegacyCompressionMethods_NumBytes, out ReadOnlySpan<byte> legacyCompressionMethods);
+            data = data.ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out var extensionBytes);
 
             while (!extensionBytes.IsEmpty)
             {

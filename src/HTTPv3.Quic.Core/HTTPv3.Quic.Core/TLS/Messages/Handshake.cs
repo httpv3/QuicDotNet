@@ -6,7 +6,7 @@ namespace HTTPv3.Quic.TLS.Messages
 {
     internal class Handshake
     {
-        public const int LengthNumBytes = 3;
+        public const int Length_NumBytes = 3;
 
         public HandshakeType MessageType;
 
@@ -18,7 +18,7 @@ namespace HTTPv3.Quic.TLS.Messages
         public static Handshake Parse(ReadOnlySpan<byte> data)
         {
             data = data.ReadNextByte(out byte typeByte)
-                       .ReadNextNumber(LengthNumBytes, out uint length);
+                       .ReadNextNumber(Length_NumBytes, out uint length);
 
             HandshakeType type = (HandshakeType)typeByte;
 

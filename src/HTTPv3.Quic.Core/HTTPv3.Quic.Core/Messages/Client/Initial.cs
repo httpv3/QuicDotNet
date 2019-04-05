@@ -36,7 +36,7 @@ namespace HTTPv3.Quic.Messages.Client
 
         internal void RemoveHeaderProtection(ref Packet p)
         {
-            PacketNumLength = (p.LongHeader.HeaderBytes[Header.PacketNumberLengthOffset] & Header.PacketNumberLengthMask) + 1;
+            PacketNumLength = (p.LongHeader.HeaderBytes[Header.PacketNumberLength_Offset] & Header.PacketNumberLength_Mask) + 1;
 
             for (int i = 0, j = 1; i < PacketNumLength; i++, j++)
                 StartOfPacketNumber[i] ^= p.HeaderProtectionMask[j];

@@ -9,33 +9,33 @@ namespace HTTPv3.Quic.Messages.Common
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-17.2
     internal ref struct Header
     {
-        public const int HeaderFormOffset = 0;
-        public const byte HeaderFormMask = 0x80;
-        public const int FixedBitOffset = 0;
-        public const byte FixedBitMask = 0x40;
-        public const int PacketNumberLengthOffset = 0;
-        public const int PacketNumberLengthMask = 0x3;
+        public const int HeaderForm_Offset = 0;
+        public const byte HeaderForm_Mask = 0x80;
+        public const int FixedBit_Offset = 0;
+        public const byte FixedBit_Mask = 0x40;
+        public const int PacketNumberLength_Offset = 0;
+        public const int PacketNumberLength_Mask = 0x3;
 
-        public const int LongPacketTypeOffset = 0;
-        public const byte LongPacketTypeMask = 0x30;
-        public const short LongPacketTypeShift = 4;
-        public const int TypeSpecificBitsOffset = 0;
-        public const byte TypeSpecificBitsMask = 0x0F;
+        public const int LongPacketType_Offset = 0;
+        public const byte LongPacketType_Mask = 0x30;
+        public const short LongPacketType_Shift = 4;
+        public const int TypeSpecificBits_Offset = 0;
+        public const byte TypeSpecificBits_Mask = 0x0F;
 
-        public const int VersionOffset = 1;
-        public const byte VersionLength = 4;
+        public const int Version_Offset = 1;
+        public const byte Version_Length = 4;
 
-        public const int DCILOffset = 5;
-        public const byte DCILMask = 0xF0;
-        public const short DCILShift = 4;
-        public const int SCILOffset = 5;
-        public const byte SCILMask = 0x0F;
+        public const int DCIL_Offset = 5;
+        public const byte DCIL_Mask = 0xF0;
+        public const short DCIL_Shift = 4;
+        public const int SCIL_Offset = 5;
+        public const byte SCIL_Mask = 0x0F;
 
-        public const int StartOfConnIDsOffset = 6;
+        public const int StartOfConnIDs_Offset = 6;
 
         public static bool IsLongHeader(ref Packet packet)
         {
-            return (packet.Bytes[HeaderFormOffset] & HeaderFormMask) > 0;
+            return (packet.Bytes[HeaderForm_Offset] & HeaderForm_Mask) > 0;
         }
     }
 }

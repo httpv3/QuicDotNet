@@ -6,13 +6,13 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
     internal class PskKeyExchangeModes : Extension
     {
-        public const int ArrayLengthNumBytes = 1;
+        public const int ArrayLength_NumBytes = 1;
 
         public List<PskKeyExchangeMode> Modes = new List<PskKeyExchangeMode>();
 
         public PskKeyExchangeModes(ReadOnlySpan<byte> data) : base(ExtensionType.PskKeyExchangeModes)
         {
-            data.ReadNextTLSVariableLength(ArrayLengthNumBytes, out var arrData);
+            data.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
 
             while(!arrData.IsEmpty)
             {

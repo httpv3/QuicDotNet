@@ -27,22 +27,22 @@ namespace HTTPv3.Quic.Messages.Common
 
         public LongHeader(ref Packet packet)
         {
-            if (packet.Bytes.Length < Header.StartOfConnIDsOffset) throw new LongHeaderParsingException($"Minimum Size of Long Header is {Header.StartOfConnIDsOffset} bytes long.");
+            if (packet.Bytes.Length < Header.StartOfConnIDs_Offset) throw new LongHeaderParsingException($"Minimum Size of Long Header is {Header.StartOfConnIDs_Offset} bytes long.");
 
-            if ((packet.Bytes[Header.HeaderFormOffset] & Header.HeaderFormMask) == 0) throw new LongHeaderParsingException("Error trying to parse non Long Header into Long Header.");
+            if ((packet.Bytes[Header.HeaderForm_Offset] & Header.HeaderForm_Mask) == 0) throw new LongHeaderParsingException("Error trying to parse non Long Header into Long Header.");
 
-            if ((packet.Bytes[Header.FixedBitOffset] & Header.FixedBitMask) == 0) throw new LongHeaderParsingException("Fixed bit is 0.");
+            if ((packet.Bytes[Header.FixedBit_Offset] & Header.FixedBit_Mask) == 0) throw new LongHeaderParsingException("Fixed bit is 0.");
 
-            LongPacketType = (LongHeaderPacketTypes)((packet.Bytes[Header.LongPacketTypeOffset] & Header.LongPacketTypeMask) >> Header.LongPacketTypeShift);
+            LongPacketType = (LongHeaderPacketTypes)((packet.Bytes[Header.LongPacketType_Offset] & Header.LongPacketType_Mask) >> Header.LongPacketType_Shift);
             TypeSpecificBits = null;
 
-            Version = packet.Bytes.Slice(Header.VersionOffset, Header.VersionLength);
+            Version = packet.Bytes.Slice(Header.Version_Offset, Header.Version_Length);
             VersionType = ParseVersionType(Version);
 
-            int DCIL = ParseConnIDLength((byte)((packet.Bytes[Header.DCILOffset] & Header.DCILMask) >> Header.DCILShift));
-            int SCIL = ParseConnIDLength((byte)((packet.Bytes[Header.SCILOffset] & Header.SCILMask)));
+            int DCIL = ParseConnIDLength((byte)((packet.Bytes[Header.DCIL_Offset] & Header.DCIL_Mask) >> Header.DCIL_Shift));
+            int SCIL = ParseConnIDLength((byte)((packet.Bytes[Header.SCIL_Offset] & Header.SCIL_Mask)));
 
-            int destionationConnIdOffset = Header.StartOfConnIDsOffset;
+            int destionationConnIdOffset = Header.StartOfConnIDs_Offset;
             int sourceConnIdOffset = destionationConnIdOffset + DCIL;
             var length = sourceConnIdOffset + SCIL;
 
@@ -58,7 +58,7 @@ namespace HTTPv3.Quic.Messages.Common
         {
             p.Bytes[0] ^= (byte)(p.HeaderProtectionMask[0] & 0xF);
 
-            TypeSpecificBits = (byte)(HeaderBytes[Header.TypeSpecificBitsOffset] & Header.TypeSpecificBitsMask);
+            TypeSpecificBits = (byte)(HeaderBytes[Header.TypeSpecificBits_Offset] & Header.TypeSpecificBits_Mask);
         }
 
         public static int ParseConnIDLength(byte field)

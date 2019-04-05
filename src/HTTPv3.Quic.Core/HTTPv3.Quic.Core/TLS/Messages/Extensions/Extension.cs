@@ -7,8 +7,8 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
     internal class Extension
     {
-        public const int TypeNumBytes = 2;
-        public const int LengthNumBytes = 2;
+        public const int Type_NumBytes = 2;
+        public const int Length_NumBytes = 2;
 
         public ExtensionType ExtensionType;
 
@@ -19,8 +19,8 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
         public static Extension Parse(ref ReadOnlySpan<byte> data)
         {
-            data = data.ReadNextNumber(TypeNumBytes, out uint typeInt)
-                       .ReadNextTLSVariableLength(LengthNumBytes, out var extBytes);
+            data = data.ReadNextNumber(Type_NumBytes, out uint typeInt)
+                       .ReadNextTLSVariableLength(Length_NumBytes, out var extBytes);
 
             ExtensionType type = (ExtensionType)typeInt;
 
