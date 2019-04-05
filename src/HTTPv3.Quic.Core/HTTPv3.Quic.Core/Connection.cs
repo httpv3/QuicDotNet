@@ -19,9 +19,9 @@ namespace HTTPv3.Quic
 
         internal Connection() { }
 
-        internal void CreateInitialKeys(ConnectionId remoteConnectionId)
+        internal void CreateInitialKeys(ConnectionId clientChosenDestinationId, bool isServer)
         {
-            InitialKeys = new InitialKeys(remoteConnectionId.ConnectionIdBytes);
+            InitialKeys = new InitialKeys(clientChosenDestinationId.ConnectionIdBytes, isServer);
         }
 
         internal EncryptionKeys CurrentKeys

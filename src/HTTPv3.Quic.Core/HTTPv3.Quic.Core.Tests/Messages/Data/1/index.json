@@ -1,0 +1,14 @@
+{
+  "files": [
+    {
+      "sequence": 1,
+      "name": "c.initial.bin",
+      "source": "client"
+    },
+    {
+      "sequence": 2,
+      "name": "s.initial.bin",
+      "source": "server"
+    }
+  ]
+}

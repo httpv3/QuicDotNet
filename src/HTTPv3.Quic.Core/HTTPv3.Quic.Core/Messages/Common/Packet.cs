@@ -43,24 +43,13 @@ namespace HTTPv3.Quic.Messages.Common
             {
                 p.LongHeader = new LongHeader(ref p);
 
-                if (isServer)
-                {
-                    var serverId = new ConnectionId(p.LongHeader.DestinationConnID.ToArray());
-                    var clientId = new ConnectionId(p.LongHeader.SourceConnID.ToArray());
-                    p.Connection = ConnectionManager.GetOrCreate(serverId, clientId);
-                }
-                else
-                {
-                    var clientId = new ConnectionId(p.LongHeader.DestinationConnID.ToArray());
-                    var serverId = new ConnectionId(p.LongHeader.SourceConnID.ToArray());
-                    p.Connection = ConnectionManager.GetOrCreate(clientId, serverId);
-                }
+                p.Connection = ConnectionManager.GetOrCreate(new ConnectionId(p.LongHeader.DestinationConnID.ToArray()), new ConnectionId(p.LongHeader.SourceConnID.ToArray()), isServer);
 
                 switch (p.LongHeader.LongPacketType)
                 {
                     case LongHeaderPacketTypes.Initial:
                         p.Initial = new Initial(ref p);
-                        p.HeaderProtectionMask = p.Initial.ComputeHeaderProtectionMask(ref p);
+                        p.HeaderProtectionMask = p.Initial.ComputeDecryptionHeaderProtectionMask(ref p);
                         p.LongHeader.RemoveHeaderProtection(ref p);
 
                         p.Initial.RemoveHeaderProtection(ref p);

@@ -45,10 +45,17 @@ namespace HTTPv3.Quic.Messages.Client
         }
 
 
-        public ReadOnlySpan<byte> ComputeHeaderProtectionMask(ref Packet p)
+        public ReadOnlySpan<byte> ComputeDecryptionHeaderProtectionMask(ref Packet p)
         {
             var sample = StartOfPacketNumber.Slice(4, 16);
-            return p.Connection.CurrentKeys.ComputeHeaderProtectionMask(sample);
+            return p.Connection.CurrentKeys.ComputeDecryptionHeaderProtectionMask(sample);
+        }
+
+
+        public ReadOnlySpan<byte> ComputeEncryptionHeaderProtectionMask(ref Packet p)
+        {
+            var sample = StartOfPacketNumber.Slice(4, 16);
+            return p.Connection.CurrentKeys.ComputeEncryptionHeaderProtectionMask(sample);
         }
     }
 }

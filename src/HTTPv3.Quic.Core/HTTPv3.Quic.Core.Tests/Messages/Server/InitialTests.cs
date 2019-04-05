@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace HTTPv3.Quic.Messages.Client
+namespace HTTPv3.Quic.Messages.Server
 {
     [TestClass]
     public class InitialTests
@@ -12,9 +12,9 @@ namespace HTTPv3.Quic.Messages.Client
         [TestMethod]
         public void HappyPathSet1()
         {
-            var file = MessageSets.Set1[1];
+            var file = MessageSets.Set1[2];
             var packet = Packet.ParseNewPacket(file.Data, file.FromClient);
-            var obj = packet.ReadNextFrame();
+            //var obj = packet.ReadNextFrame();
         }
 
     }

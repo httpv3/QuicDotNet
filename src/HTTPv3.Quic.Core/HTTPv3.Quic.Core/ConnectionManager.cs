@@ -16,7 +16,7 @@ namespace HTTPv3.Quic
             return null;
         }
 
-        public static Connection StartConversation()
+        public static Connection StartNewConversation()
         {
             Connection conn = new Connection();
 
@@ -30,12 +30,12 @@ namespace HTTPv3.Quic
                 conn.RemoteConnectionId = ConnectionId.Generate();
             } while (!connections.TryAdd(conn.RemoteConnectionId, conn));
 
-            conn.CreateInitialKeys(conn.RemoteConnectionId);
+            conn.CreateInitialKeys(conn.RemoteConnectionId, false);
 
             return conn;
         }
 
-        public static Connection CreateForExisting(ConnectionId myId, ConnectionId remoteId)
+        public static Connection CreateForExisting(ConnectionId myId, ConnectionId remoteId, bool isServer)
         {
             Connection conn = new Connection()
             {
@@ -43,20 +43,20 @@ namespace HTTPv3.Quic
                 RemoteConnectionId = remoteId
             };
 
-            conn.CreateInitialKeys(myId);
+            conn.CreateInitialKeys(isServer ? remoteId : myId, isServer);
 
             connections[myId] = connections[remoteId] = conn;
 
             return conn;
         }
 
-        public static Connection GetOrCreate(ConnectionId myId, ConnectionId remoteId)
+        public static Connection GetOrCreate(ConnectionId myId, ConnectionId remoteId, bool isServer)
         {
             var conn = Get(myId);
             if (conn != null)
                 return conn;
 
-            conn = CreateForExisting(myId, remoteId);
+            conn = CreateForExisting(myId, remoteId, isServer);
 
             return conn;
         }
