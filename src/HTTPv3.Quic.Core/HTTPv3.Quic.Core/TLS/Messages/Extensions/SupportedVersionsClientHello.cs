@@ -4,14 +4,14 @@ using System.Text;
 
 namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
-    internal class SupportedVersions : Extension
+    internal class SupportedVersionsClientHello : Extension
     {
         public const int ArrayLength_NumBytes = 1;
         public const int SupportedVersionLength_NumBytes = 2;
 
         public List<ProtocolVersion> Versions = new List<ProtocolVersion>();
 
-        public SupportedVersions(ReadOnlySpan<byte> data) : base(ExtensionType.SupportedVersions)
+        public SupportedVersionsClientHello(ReadOnlySpan<byte> data) : base(ExtensionType.SupportedVersions)
         {
             data.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
 

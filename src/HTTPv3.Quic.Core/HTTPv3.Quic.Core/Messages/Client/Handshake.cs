@@ -6,10 +6,8 @@ using System.Text;
 
 namespace HTTPv3.Quic.Messages.Client
 {
-    internal ref struct Initial
+    internal ref struct Handshake
     {
-        public readonly Span<byte> Token;
-
         public readonly int PayloadAndPacketNumberLength;
 
         public int PacketNumLength;
@@ -17,15 +15,13 @@ namespace HTTPv3.Quic.Messages.Client
 
         public readonly Span<byte> StartOfPacketNumber;
 
-        public Initial(ref Packet packet)
+        public Handshake(ref Packet packet)
         {
-            if (packet.LongHeader.LongPacketType != LongHeaderPacketTypes.Initial) throw new InitialParsingException($"Long Header is of type {packet.LongHeader.LongPacketType}");
+            if (packet.LongHeader.LongPacketType != LongHeaderPacketTypes.Handshake) throw new HandshakeParsingException($"Long Header is of type {packet.LongHeader.LongPacketType}");
 
             Span<byte> afterHeader = packet.Bytes.Slice(packet.LongHeader.HeaderBytes.Length);
 
-            StartOfPacketNumber = afterHeader.ReadNextVariableInt(out int tokenLength)
-                                     .ReadNextBytes(tokenLength, out Token)
-                                     .ReadNextVariableInt(out PayloadAndPacketNumberLength);
+            StartOfPacketNumber = afterHeader.ReadNextVariableInt(out PayloadAndPacketNumberLength);
 
             PacketNumLength = 0;
             PacketNumber = 0;

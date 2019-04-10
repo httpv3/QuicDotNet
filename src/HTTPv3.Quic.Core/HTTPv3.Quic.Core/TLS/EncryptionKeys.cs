@@ -19,7 +19,8 @@ namespace HTTPv3.Quic.TLS
         public readonly static byte[] QuicIV = "000c0d746c733133207175696320697600".ToByteArrayFromHex();
         public readonly static byte[] QuicHP = "00100d746c733133207175696320687000".ToByteArrayFromHex();
 
-        public readonly static AronParker.Hkdf.Hkdf Hkdf = new AronParker.Hkdf.Hkdf(System.Security.Cryptography.HashAlgorithmName.SHA256);
+        public readonly static AronParker.Hkdf.Hkdf Hkdf256 = new AronParker.Hkdf.Hkdf(System.Security.Cryptography.HashAlgorithmName.SHA256);
+        public readonly static AronParker.Hkdf.Hkdf Hkdf384 = new AronParker.Hkdf.Hkdf(System.Security.Cryptography.HashAlgorithmName.SHA384);
 
         public readonly byte[] EncryptionKey;
         public readonly byte[] EncryptionIV;
@@ -32,15 +33,18 @@ namespace HTTPv3.Quic.TLS
         public readonly IBufferedCipher Encryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
         public readonly IBufferedCipher Decryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
 
-        public EncryptionKeys(in byte[] encryptionSecret, in byte[] decryptionSecret)
+        public EncryptionKeys(in byte[] encryptionSecret, in byte[] decryptionSecret, int hkdfbits = 256)
         {
-            EncryptionKey = Hkdf.Expand(encryptionSecret, 16, QuicKey);
-            EncryptionIV = Hkdf.Expand(encryptionSecret, 12, QuicIV);
-            EncryptionHP = Hkdf.Expand(encryptionSecret, 16, QuicHP);
+            AronParker.Hkdf.Hkdf hkdf = Hkdf256;
+            if (hkdfbits == 384)
+                hkdf = Hkdf384;
+            EncryptionKey = hkdf.Expand(encryptionSecret, 16, QuicKey);
+            EncryptionIV = hkdf.Expand(encryptionSecret, 12, QuicIV);
+            EncryptionHP = hkdf.Expand(encryptionSecret, 16, QuicHP);
 
-            DecryptionKey = Hkdf.Expand(decryptionSecret, 16, QuicKey);
-            DecryptionIV = Hkdf.Expand(decryptionSecret, 12, QuicIV);
-            DecryptionHP = Hkdf.Expand(decryptionSecret, 16, QuicHP);
+            DecryptionKey = hkdf.Expand(decryptionSecret, 16, QuicKey);
+            DecryptionIV = hkdf.Expand(decryptionSecret, 12, QuicIV);
+            DecryptionHP = hkdf.Expand(decryptionSecret, 16, QuicHP);
 
             Encryption_AES_ECB.Init(true, new KeyParameter(EncryptionHP));
             Decryption_AES_ECB.Init(true, new KeyParameter(DecryptionHP));
@@ -48,7 +52,9 @@ namespace HTTPv3.Quic.TLS
 
         public ReadOnlySpan<byte> ComputeDecryptionHeaderProtectionMask(ReadOnlySpan<byte> sample)
         {
+            Decryption_AES_ECB.Init(true, new KeyParameter(DecryptionHP));
             var bytes = Decryption_AES_ECB.ProcessBytes(sample.ToArray());
+            var bytes2 = Encryption_AES_ECB.ProcessBytes(sample.ToArray());
 
             return new ReadOnlySpan<byte>(bytes, 0, 5);
         }

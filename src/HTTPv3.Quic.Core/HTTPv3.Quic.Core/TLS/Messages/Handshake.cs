@@ -26,6 +26,8 @@ namespace HTTPv3.Quic.TLS.Messages
             {
                 case HandshakeType.ClientHello:
                     return new ClientHello(data);
+                case HandshakeType.ServerHello:
+                    return new ServerHello(data);
                 default:
                     return null;
             }

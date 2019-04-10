@@ -17,6 +17,7 @@ namespace HTTPv3.Quic.Messages.Common
 
         public LongHeader LongHeader;
         public Initial Initial;
+        public Handshake Handshake;
 
         public ReadOnlySpan<byte> HeaderProtectionMask;
         public Span<byte> StartOfPayload;
@@ -30,12 +31,13 @@ namespace HTTPv3.Quic.Messages.Common
             IsServer = isServer;
             LongHeader = default;
             Initial = default;
+            Handshake = default;
             State = PacketState.Encrypted;
             HeaderProtectionMask = null;
             StartOfPayload = null;
         }
 
-        public static Packet ParseNewPacket(Span<byte> bytes, bool isServer)
+        public static Packet ParseNewPacket(Span<byte> bytes, bool isServer, Connection conn = null)
         {
             Packet p = new Packet(bytes, isServer);
 
@@ -43,7 +45,17 @@ namespace HTTPv3.Quic.Messages.Common
             {
                 p.LongHeader = new LongHeader(ref p);
 
-                p.Connection = ConnectionManager.GetOrCreate(new ConnectionId(p.LongHeader.DestinationConnID.ToArray()), new ConnectionId(p.LongHeader.SourceConnID.ToArray()), isServer);
+                if (conn != null)
+                {
+                    p.Connection = conn;
+                }
+                else
+                {
+                    if (isServer)
+                        p.Connection = ConnectionManager.GetOrCreate(new ClientConnectionId(p.LongHeader.SourceConnID.ToArray()), new ServerConnectionId(p.LongHeader.DestinationConnID.ToArray()), isServer);
+                    else
+                        p.Connection = ConnectionManager.GetOrCreate(new ClientConnectionId(p.LongHeader.DestinationConnID.ToArray()), new ServerConnectionId(p.LongHeader.SourceConnID.ToArray()), isServer);
+                }
 
                 switch (p.LongHeader.LongPacketType)
                 {
@@ -54,6 +66,14 @@ namespace HTTPv3.Quic.Messages.Common
 
                         p.Initial.RemoveHeaderProtection(ref p);
                         p.DecryptPayLoad();
+                        break;
+                    case LongHeaderPacketTypes.Handshake:
+                        p.Handshake = new Handshake(ref p);
+                        p.HeaderProtectionMask = p.Handshake.ComputeDecryptionHeaderProtectionMask(ref p);
+                        p.LongHeader.RemoveHeaderProtection(ref p);
+
+                        p.Handshake.RemoveHeaderProtection(ref p);
+                        //p.DecryptPayLoad();
                         break;
                 }
             }
@@ -68,6 +88,12 @@ namespace HTTPv3.Quic.Messages.Common
 
             byte frameType;
             PayloadCursor = PayloadCursor.ReadNextByte(out frameType);
+            if (frameType == 0x02)
+            {
+                PayloadCursor = PayloadCursor.Slice(4);
+                return null;
+                //return new AckFrame(ref this);
+            }
             if (frameType == 0x06)
                 return new CryptoFrame(ref this);
 

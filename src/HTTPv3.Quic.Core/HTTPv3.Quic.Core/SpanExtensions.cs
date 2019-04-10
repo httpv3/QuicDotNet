@@ -81,5 +81,69 @@ namespace HTTPv3.Quic
                 return num;
             }
         }
+
+        public static Span<byte> WriteNextByte(this Span<byte> bufferIn, byte value)
+        {
+            const int numBytes = 1;
+
+            if (bufferIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bufferIn.Length} bytes left.");
+
+            bufferIn[0] = value;
+
+            return bufferIn.Slice(numBytes);
+        }
+
+        public static Span<byte> WriteNextBytes(this Span<byte> bufferIn, Span<byte> bytesIn)
+        {
+            if (bufferIn.Length < bytesIn.Length) throw new NotEnoughBytesException($"Expecting {bytesIn.Length} bytes but only have {bufferIn.Length} bytes left.");
+
+            bytesIn.CopyTo(bufferIn);
+
+            return bufferIn.Slice(bytesIn.Length);
+        }
+
+        public static Span<byte> WriteNextNumber(this Span<byte> bufferIn, ushort value)
+        {
+            const int numBytes = 2;
+
+            if (bufferIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bufferIn.Length} bytes left.");
+
+            bufferIn[1] = (byte)(value & 0xFF);
+            bufferIn[0] = (byte)((value >>= 8) & 0xFF);
+
+            return bufferIn.Slice(numBytes);
+        }
+
+        public static Span<byte> WriteNextNumber(this Span<byte> bufferIn, uint value)
+        {
+            const int numBytes = 4;
+
+            if (bufferIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bufferIn.Length} bytes left.");
+
+            bufferIn[3] = (byte)(value & 0xFF);
+            bufferIn[2] = (byte)((value >>= 8) & 0xFF);
+            bufferIn[1] = (byte)((value >>= 8) & 0xFF);
+            bufferIn[0] = (byte)((value >>= 8) & 0xFF);
+
+            return bufferIn.Slice(numBytes);
+        }
+
+        public static Span<byte> WriteNextNumber(this Span<byte> bufferIn, ulong value)
+        {
+            const int numBytes = 8;
+
+            if (bufferIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bufferIn.Length} bytes left.");
+
+            bufferIn[7] = (byte)(value & 0xFF);
+            bufferIn[6] = (byte)((value >>= 8) & 0xFF);
+            bufferIn[5] = (byte)((value >>= 8) & 0xFF);
+            bufferIn[4] = (byte)((value >>= 8) & 0xFF);
+            bufferIn[3] = (byte)((value >>= 8) & 0xFF);
+            bufferIn[2] = (byte)((value >>= 8) & 0xFF);
+            bufferIn[1] = (byte)((value >>= 8) & 0xFF);
+            bufferIn[0] = (byte)((value >>= 8) & 0xFF);
+
+            return bufferIn.Slice(numBytes);
+        }
     }
 }

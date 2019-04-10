@@ -6,6 +6,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
     internal enum ProtocolVersion : ushort
     {
+        NA = 0x0000,
         TLSv1_0 = 0x0301,
         TLSv1_1 = 0x0302,
         TLSv1_2 = 0x0303,

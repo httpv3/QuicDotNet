@@ -9,19 +9,20 @@ namespace HTTPv3.Quic
     public class Connection
     {
         public ConnectionState ConnectionState { get; private set; } = ConnectionState.NotConnected;
-        public EncryptionState EncryptionState { get; private set; } = EncryptionState.Initial;
+        public EncryptionState EncryptionState { get; internal set; } = EncryptionState.Initial;
 
-        public ConnectionId MyConnectionId;
-        public ConnectionId RemoteConnectionId;
+        public ClientConnectionId ClientConnectionId;
+        public ServerConnectionId ServerConnectionId;
         public IPEndPoint RemoteEndPoint;
 
         private InitialKeys InitialKeys;
+        internal HandshakeKeys HandshakeKeys;
 
         internal Connection() { }
 
-        internal void CreateInitialKeys(ConnectionId clientChosenDestinationId, bool isServer)
+        internal void CreateInitialKeys(ServerConnectionId clientChosenServerId, bool isServer)
         {
-            InitialKeys = new InitialKeys(clientChosenDestinationId.ConnectionIdBytes, isServer);
+            InitialKeys = new InitialKeys(clientChosenServerId.ConnectionIdBytes, isServer);
         }
 
         internal EncryptionKeys CurrentKeys
@@ -32,6 +33,8 @@ namespace HTTPv3.Quic
                 {
                     case EncryptionState.Initial:
                         return InitialKeys.EncryptionKeys;
+                    case EncryptionState.Handshake:
+                        return HandshakeKeys.EncryptionKeys;
                 }
 
                 return null;

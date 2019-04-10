@@ -10,8 +10,9 @@ namespace HTTPv3.Quic.Messages.Common
         [TestMethod]
         public void HappyPathSet1()
         {
-            var file = MessageSets.Set1[1];
-            var packet = Packet.ParseNewPacket(file.Data, file.FromClient);
+            var set = MessageSets.Set1;
+            var file = set[1];
+            var packet = Packet.ParseNewPacket(file.Data, file.FromClient, set.ServerConnection);
 
             var version = new ReadOnlySpan<byte>("ff000012".ToByteArrayFromHex());
             var versionType = VersionTypes.Draft_18;
@@ -98,8 +99,9 @@ namespace HTTPv3.Quic.Messages.Common
         [TestMethod]
         public void NoDestinationConnId()
         {
-            var file = MessageSets.Set1[1];
-            var packet = Packet.ParseNewPacket(file.Data, file.FromClient);
+            var set = MessageSets.Set1;
+            var file = set[1];
+            var packet = Packet.ParseNewPacket(file.Data, file.FromClient, set.ServerConnection);
 
             var version = new ReadOnlySpan<byte>("ff000012".ToByteArrayFromHex());
             var versionType = VersionTypes.Draft_18;
@@ -124,8 +126,9 @@ namespace HTTPv3.Quic.Messages.Common
         [TestMethod]
         public void NoSourceConnId()
         {
-            var file = MessageSets.Set1[1];
-            var packet = Packet.ParseNewPacket(file.Data, file.FromClient);
+            var set = MessageSets.Set1;
+            var file = set[1];
+            var packet = Packet.ParseNewPacket(file.Data, file.FromClient, set.ServerConnection);
 
             var version = new ReadOnlySpan<byte>("ff000012".ToByteArrayFromHex());
             var versionType = VersionTypes.Draft_18;

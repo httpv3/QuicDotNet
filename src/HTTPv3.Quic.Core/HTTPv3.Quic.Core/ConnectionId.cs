@@ -19,9 +19,9 @@ namespace HTTPv3.Quic
             HashCode = Hasher.ComputeHash(connectionIdBytes).Hash.ToInt32(true);
         }
 
-        public static ConnectionId Generate(int length = DefaultLength)
+        public static byte[] Generate(int length = DefaultLength)
         {
-            return new ConnectionId(SecureRandom.GetNextBytes(prng, length));
+            return SecureRandom.GetNextBytes(prng, length);
         }
 
         public override int GetHashCode()
@@ -40,9 +40,9 @@ namespace HTTPv3.Quic
                 return ConnectionIdBytes.SequenceEqual(arr);
             }
 
-            if (obj.GetType() == typeof(ConnectionId))
+            var connId = obj as ConnectionId;
+            if (connId != null)
             {
-                var connId = obj as ConnectionId;
                 return ConnectionIdBytes.SequenceEqual(connId.ConnectionIdBytes);
             }
 

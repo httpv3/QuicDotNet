@@ -16,10 +16,10 @@
         public InitialKeys(byte[] clientChosenDestinationId, bool isServer)
         {
             ClientChosenDestinationId = clientChosenDestinationId;
-            InitialSecret = EncryptionKeys.Hkdf.Extract(ClientChosenDestinationId, EncryptionKeys.InitialSalt);
+            InitialSecret = EncryptionKeys.Hkdf256.Extract(ClientChosenDestinationId, EncryptionKeys.InitialSalt);
 
-            ClientInitialSecret = EncryptionKeys.Hkdf.Expand(InitialSecret, 32, EncryptionKeys.ServerIn);
-            ServerInitialSecret = EncryptionKeys.Hkdf.Expand(InitialSecret, 32, EncryptionKeys.ServerIn);
+            ClientInitialSecret = EncryptionKeys.Hkdf256.Expand(InitialSecret, 32, EncryptionKeys.ClientIn);
+            ServerInitialSecret = EncryptionKeys.Hkdf256.Expand(InitialSecret, 32, EncryptionKeys.ServerIn);
 
             if (isServer)
                 EncryptionKeys = new EncryptionKeys(ServerInitialSecret, ClientInitialSecret);

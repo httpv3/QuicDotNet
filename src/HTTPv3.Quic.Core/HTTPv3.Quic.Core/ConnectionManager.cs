@@ -22,41 +22,45 @@ namespace HTTPv3.Quic
 
             do
             {
-                conn.MyConnectionId = ConnectionId.Generate();
-            } while (!connections.TryAdd(conn.MyConnectionId, conn));
+                conn.ClientConnectionId = new ClientConnectionId(ConnectionId.Generate());
+            } while (!connections.TryAdd(conn.ClientConnectionId, conn));
 
             do
             {
-                conn.RemoteConnectionId = ConnectionId.Generate();
-            } while (!connections.TryAdd(conn.RemoteConnectionId, conn));
+                conn.ServerConnectionId = new ServerConnectionId(ConnectionId.Generate());
+            } while (!connections.TryAdd(conn.ServerConnectionId, conn));
 
-            conn.CreateInitialKeys(conn.RemoteConnectionId, false);
+            conn.CreateInitialKeys(conn.ServerConnectionId, false);
 
             return conn;
         }
 
-        public static Connection CreateForExisting(ConnectionId myId, ConnectionId remoteId, bool isServer)
+        public static Connection CreateForExisting(ClientConnectionId clientId, ServerConnectionId serverId, bool isServer)
         {
             Connection conn = new Connection()
             {
-                MyConnectionId = myId,
-                RemoteConnectionId = remoteId
+                ClientConnectionId = clientId,
+                ServerConnectionId = serverId
             };
 
-            conn.CreateInitialKeys(isServer ? remoteId : myId, isServer);
+            conn.CreateInitialKeys(serverId, isServer);
 
-            connections[myId] = connections[remoteId] = conn;
+            connections[clientId] = connections[serverId] = conn;
 
             return conn;
         }
 
-        public static Connection GetOrCreate(ConnectionId myId, ConnectionId remoteId, bool isServer)
+        public static Connection GetOrCreate(ClientConnectionId clientId, ServerConnectionId serverId, bool isServer)
         {
-            var conn = Get(myId);
+            var conn = Get(clientId);
             if (conn != null)
                 return conn;
 
-            conn = CreateForExisting(myId, remoteId, isServer);
+            conn = Get(serverId);
+            if (conn != null)
+                return conn;
+
+            conn = CreateForExisting(clientId, serverId, isServer);
 
             return conn;
         }

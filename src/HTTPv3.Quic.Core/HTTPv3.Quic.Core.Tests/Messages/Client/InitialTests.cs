@@ -12,8 +12,9 @@ namespace HTTPv3.Quic.Messages.Client
         [TestMethod]
         public void HappyPathSet1()
         {
-            var file = MessageSets.Set1[1];
-            var packet = Packet.ParseNewPacket(file.Data, file.FromClient);
+            var set = MessageSets.Set1;
+            var file = set[1];
+            var packet = Packet.ParseNewPacket(file.Data, file.FromClient, set.ServerConnection);
             var obj = packet.ReadNextFrame();
         }
 
