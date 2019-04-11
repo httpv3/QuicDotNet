@@ -28,6 +28,8 @@ namespace HTTPv3.Quic.TLS.Messages
                     return new ClientHello(data);
                 case HandshakeType.ServerHello:
                     return new ServerHello(data);
+                case HandshakeType.EncryptedExtensions:
+                    return new EncryptedExtensions(data);
                 default:
                     return null;
             }

@@ -25,7 +25,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
             switch (type)
             {
                 case ExtensionType.ServerName:
-                    return new ServerName(extBytes);
+                    return new ServerNameList(extBytes);
                 case ExtensionType.SupportedVersions:
                     return new SupportedVersionsClientHello(extBytes);
                 case ExtensionType.SupportedGroups:

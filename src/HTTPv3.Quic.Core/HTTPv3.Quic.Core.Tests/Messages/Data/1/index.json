@@ -15,5 +15,20 @@
       "name": "s.handshake.bin",
       "source": "server"
     }
-  ]
+  ],
+  "secrets": {
+    "initial": "174d1953def9d2c2",
+    "handshake": {
+      "client": "228c5bb650564b55f1bd36310694ffcae18690b381eec01715596ca4b217d403eb2beade40532ceae4f39d800222efac",
+      "server": "2dae23de06bb5f69a76efe0f0a49899e072d0730a0a1cd5b5e5be52b951440fabca84e59f8926e340477b1a29a88d9c8",
+      "cipherSuite": "TLS_AES_256_GCM_SHA384"
+    },
+    "application": [
+      {
+        "client": "c78e427fb8ee36d286f6c9e41a81a7e3a34170cf6e7d04d26e779ee3f916e81af665a8b7e8257a0054f06e3579cf02eb",
+        "server": "6c57a1164a6c806b8103b7da63b500fb5cc29758566aad9aea030c46b7f85b33cf8f488b5ca1e40912e0b5c0c1080674",
+        "cipherSuite": "TLS_AES_256_GCM_SHA384"
+      }
+    ]
+  }
 }

@@ -6,26 +6,22 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
     internal class ServerName : Extension
     {
-        public const int ArrayLength_NumBytes = 2;
         public const int NameLength_NumBytes = 2;
         public const byte HostNameType = 0;
 
-        public byte[] Name;
+        public byte[] Name = new byte[0];
 
         public ServerName(ReadOnlySpan<byte> data) : base(ExtensionType.ServerName)
         {
-            data.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+            if (data.IsEmpty)
+                return;
 
-            while(!arrData.IsEmpty)
+            data = data.ReadNextByte(out var type)
+                       .ReadNextTLSVariableLength(NameLength_NumBytes, out var name);
+
+            if (type == HostNameType)
             {
-                arrData = arrData.ReadNextByte(out var type)
-                                 .ReadNextTLSVariableLength(NameLength_NumBytes, out var name);
-
-                if (type == HostNameType)
-                {
-                    Name = name.ToArray();
-                    return;
-                }
+                Name = name.ToArray();
             }
         }
     }

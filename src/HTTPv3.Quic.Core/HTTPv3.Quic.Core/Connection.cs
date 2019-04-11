@@ -15,7 +15,7 @@ namespace HTTPv3.Quic
         public ServerConnectionId ServerConnectionId;
         public IPEndPoint RemoteEndPoint;
 
-        private InitialKeys InitialKeys;
+        internal InitialKeys InitialKeys;
         internal HandshakeKeys HandshakeKeys;
 
         internal Connection() { }

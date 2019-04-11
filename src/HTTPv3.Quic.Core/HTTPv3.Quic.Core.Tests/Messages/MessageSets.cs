@@ -1,4 +1,6 @@
 ﻿using HTTPv3.Quic.Messages.Common;
+using HTTPv3.Quic.TLS;
+using HTTPv3.Quic.TLS.Messages.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -16,8 +18,12 @@ namespace HTTPv3.Quic.Messages
         private readonly Dictionary<int, DataFile> files = new Dictionary<int, DataFile>();
         public DataFile this[int i] { get { return files[i].Clone(); } }
 
-        public Connection ClientConnection;
-        public Connection ServerConnection;
+        public InitialKeys ClientInitialKeys;
+        public InitialKeys ServerInitialKeys;
+        public HandshakeKeys ClientHandshakeKeys;
+        public HandshakeKeys ServerHandshakeKeys;
+        public ApplicationKeys[] ClientApplicationKeys;
+        public ApplicationKeys[] ServerApplicationKeys;
 
         private MessageSets(int setNum)
         {
@@ -29,31 +35,38 @@ namespace HTTPv3.Quic.Messages
                 files[file.Sequence] = file;
             }
 
-            LoadInitialKeys();
+            if (index.Secrets != null)
+                LoadSecrets(index.Secrets);
         }
 
-        private void LoadInitialKeys()
+        private void LoadSecrets(Secrets secrets)
         {
-
-            var firstPacket = this[1];
-            var p = new Packet(firstPacket.Data, false);
-            p.LongHeader = new LongHeader(ref p);
-            var serverId = new ServerConnectionId(p.LongHeader.DestinationConnID.ToArray());
-            var clientId = new ClientConnectionId(p.LongHeader.SourceConnID.ToArray());
-
-            ClientConnection = new Connection()
+            if (!string.IsNullOrWhiteSpace(secrets.Initial))
             {
-                ClientConnectionId = clientId,
-                ServerConnectionId = serverId
-            };
-            ClientConnection.CreateInitialKeys(serverId, false);
+                ClientInitialKeys = new InitialKeys(secrets.Initial.ToByteArrayFromHex().ToArray(), false);
+                ServerInitialKeys = new InitialKeys(secrets.Initial.ToByteArrayFromHex().ToArray(), true);
+            }
 
-            ServerConnection = new Connection()
+            if (secrets.Handshake != null)
             {
-                ClientConnectionId = clientId,
-                ServerConnectionId = serverId
-            };
-            ServerConnection.CreateInitialKeys(serverId, true);
+                ClientHandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, false);
+                ServerHandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, true);
+            }
+
+            if (secrets.Application != null)
+            {
+                List<ApplicationKeys> cKeys = new List<ApplicationKeys>();
+                List<ApplicationKeys> sKeys = new List<ApplicationKeys>();
+
+                foreach (var app in secrets.Application)
+                {
+                    cKeys.Add(new ApplicationKeys(app.Client.ToByteArrayFromHex().ToArray(), app.Server.ToByteArrayFromHex().ToArray(), app.CipherSuite, false));
+                    sKeys.Add(new ApplicationKeys(app.Client.ToByteArrayFromHex().ToArray(), app.Server.ToByteArrayFromHex().ToArray(), app.CipherSuite, true));
+                }
+
+                ClientApplicationKeys = cKeys.ToArray();
+                ServerApplicationKeys = sKeys.ToArray();
+            }
         }
 
         private byte[] LoadBinFile(int setNum, string filename)
@@ -75,6 +88,7 @@ namespace HTTPv3.Quic.Messages
     public class Index
     {
         public DataFile[] Files;
+        public Secrets Secrets;
     }
 
     public class DataFile
@@ -96,6 +110,20 @@ namespace HTTPv3.Quic.Messages
                 Data = Data.ToArray()
             };
         }
+    }
+
+    public class Secrets
+    {
+        public string Initial;
+        public KeyPair Handshake;
+        public KeyPair[] Application;
+    }
+
+    public class KeyPair
+    {
+        public string Client;
+        public string Server;
+        public CipherSuite CipherSuite;
     }
 
     public enum DataFileSources

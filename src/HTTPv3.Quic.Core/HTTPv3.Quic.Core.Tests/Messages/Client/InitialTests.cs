@@ -13,8 +13,14 @@ namespace HTTPv3.Quic.Messages.Client
         public void HappyPathSet1()
         {
             var set = MessageSets.Set1;
+
+            Connection conn = new Connection()
+            {
+                InitialKeys = set.ServerInitialKeys
+            };
+
             var file = set[1];
-            var packet = Packet.ParseNewPacket(file.Data, file.FromClient, set.ServerConnection);
+            var packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
             var obj = packet.ReadNextFrame();
         }
 
