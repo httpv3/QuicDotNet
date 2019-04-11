@@ -1,4 +1,7 @@
-﻿namespace HTTPv3.Quic.TLS
+﻿using HTTPv3.Quic.TLS.Messages.Extensions;
+using System;
+
+namespace HTTPv3.Quic.TLS
 {
     // IETF quic-transport draft-19
     // 5.  Packet Protection
@@ -10,15 +13,15 @@
 
         public readonly EncryptionKeys EncryptionKeys;
 
-        public HandshakeKeys(byte[] clientHandshakeSecret, byte[] serverHandshakeSecret, bool isServer)
+        public HandshakeKeys(byte[] clientHandshakeSecret, byte[] serverHandshakeSecret, CipherSuite cipherSuite, bool isServer)
         {
             ClientInitialSecret = clientHandshakeSecret;
             ServerInitialSecret = serverHandshakeSecret;
 
             if (isServer)
-                EncryptionKeys = new EncryptionKeys(ServerInitialSecret, ClientInitialSecret, 384);
+                EncryptionKeys = new EncryptionKeys(ServerInitialSecret, ClientInitialSecret, cipherSuite);
             else
-                EncryptionKeys = new EncryptionKeys(ClientInitialSecret, ServerInitialSecret, 384);
+                EncryptionKeys = new EncryptionKeys(ClientInitialSecret, ServerInitialSecret, cipherSuite);
         }
     }
 }

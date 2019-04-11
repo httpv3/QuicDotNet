@@ -1,10 +1,12 @@
-﻿using Org.BouncyCastle.Crypto;
+﻿using HTTPv3.Quic.TLS.Messages.Extensions;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace HTTPv3.Quic.TLS
@@ -15,12 +17,12 @@ namespace HTTPv3.Quic.TLS
         public readonly static byte[] InitialSalt = "ef4fb0abb47470c41befcf8031334fae485e09a0".ToByteArrayFromHex();
         public readonly static byte[] ClientIn = "00200f746c73313320636c69656e7420696e00".ToByteArrayFromHex();
         public readonly static byte[] ServerIn = "00200f746c7331332073657276657220696e00".ToByteArrayFromHex();
-        public readonly static byte[] QuicKey = "00100e746c7331332071756963206b657900".ToByteArrayFromHex();
-        public readonly static byte[] QuicIV = "000c0d746c733133207175696320697600".ToByteArrayFromHex();
-        public readonly static byte[] QuicHP = "00100d746c733133207175696320687000".ToByteArrayFromHex();
+        public readonly static byte[] QuicKey = "746c7331332071756963206b6579".ToByteArrayFromHex();
+        public readonly static byte[] QuicIV = "746c7331332071756963206976".ToByteArrayFromHex();
+        public readonly static byte[] QuicHP = "746c7331332071756963206870".ToByteArrayFromHex();
 
-        public readonly static AronParker.Hkdf.Hkdf Hkdf256 = new AronParker.Hkdf.Hkdf(System.Security.Cryptography.HashAlgorithmName.SHA256);
-        public readonly static AronParker.Hkdf.Hkdf Hkdf384 = new AronParker.Hkdf.Hkdf(System.Security.Cryptography.HashAlgorithmName.SHA384);
+        public readonly static AronParker.Hkdf.Hkdf Hkdf256 = new AronParker.Hkdf.Hkdf(HashAlgorithmName.SHA256);
+        public readonly static AronParker.Hkdf.Hkdf Hkdf384 = new AronParker.Hkdf.Hkdf(HashAlgorithmName.SHA384);
 
         public readonly byte[] EncryptionKey;
         public readonly byte[] EncryptionIV;
@@ -33,18 +35,33 @@ namespace HTTPv3.Quic.TLS
         public readonly IBufferedCipher Encryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
         public readonly IBufferedCipher Decryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
 
-        public EncryptionKeys(in byte[] encryptionSecret, in byte[] decryptionSecret, int hkdfbits = 256)
+        public EncryptionKeys(in byte[] encryptionSecret, in byte[] decryptionSecret, CipherSuite cipherSuite)
         {
-            AronParker.Hkdf.Hkdf hkdf = Hkdf256;
-            if (hkdfbits == 384)
-                hkdf = Hkdf384;
-            EncryptionKey = hkdf.Expand(encryptionSecret, 16, QuicKey);
-            EncryptionIV = hkdf.Expand(encryptionSecret, 12, QuicIV);
-            EncryptionHP = hkdf.Expand(encryptionSecret, 16, QuicHP);
+            AronParker.Hkdf.Hkdf hkdf;
+            ushort keySize;
 
-            DecryptionKey = hkdf.Expand(decryptionSecret, 16, QuicKey);
-            DecryptionIV = hkdf.Expand(decryptionSecret, 12, QuicIV);
-            DecryptionHP = hkdf.Expand(decryptionSecret, 16, QuicHP);
+            switch (cipherSuite)
+            {
+                case CipherSuite.TLS_AES_128_GCM_SHA256:
+                    hkdf = Hkdf256;
+                    keySize = 16;
+                    break;
+                case CipherSuite.TLS_AES_256_GCM_SHA384:
+                    hkdf = Hkdf384;
+                    keySize = 32;
+                    break;
+                default:
+                    throw new NotImplementedException($"Cipher Suite: {cipherSuite.ToString()} not implemented.");
+            }
+
+
+            EncryptionKey = ExpandLabel(hkdf, encryptionSecret, keySize, QuicKey);
+            EncryptionIV = ExpandLabel(hkdf, encryptionSecret, 12, QuicIV);
+            EncryptionHP = ExpandLabel(hkdf, encryptionSecret, keySize, QuicHP);
+
+            DecryptionKey = ExpandLabel(hkdf, decryptionSecret, keySize, QuicKey);
+            DecryptionIV = ExpandLabel(hkdf, decryptionSecret, 12, QuicIV);
+            DecryptionHP = ExpandLabel(hkdf, decryptionSecret, keySize, QuicHP);
 
             Encryption_AES_ECB.Init(true, new KeyParameter(EncryptionHP));
             Decryption_AES_ECB.Init(true, new KeyParameter(DecryptionHP));
@@ -52,9 +69,7 @@ namespace HTTPv3.Quic.TLS
 
         public ReadOnlySpan<byte> ComputeDecryptionHeaderProtectionMask(ReadOnlySpan<byte> sample)
         {
-            Decryption_AES_ECB.Init(true, new KeyParameter(DecryptionHP));
             var bytes = Decryption_AES_ECB.ProcessBytes(sample.ToArray());
-            var bytes2 = Encryption_AES_ECB.ProcessBytes(sample.ToArray());
 
             return new ReadOnlySpan<byte>(bytes, 0, 5);
         }
@@ -98,6 +113,17 @@ namespace HTTPv3.Quic.TLS
             cipher.DoFinal(encryptedPayload, len);
 
             return encryptedPayload;
+        }
+
+        private byte[] ExpandLabel(AronParker.Hkdf.Hkdf hkdf, byte[] secret, ushort length, ReadOnlySpan<byte> label)
+        {
+            var info = new byte[label.Length + 4];
+            var span = info.AsSpan();
+            span = span.WriteNextNumber(length)
+                       .WriteNextByte((byte)label.Length);
+            label.CopyTo(span);
+
+            return hkdf.Expand(secret, length, info);
         }
     }
 }

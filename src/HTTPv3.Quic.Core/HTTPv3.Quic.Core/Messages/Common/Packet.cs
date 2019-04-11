@@ -73,7 +73,7 @@ namespace HTTPv3.Quic.Messages.Common
                         p.LongHeader.RemoveHeaderProtection(ref p);
 
                         p.Handshake.RemoveHeaderProtection(ref p);
-                        //p.DecryptPayLoad();
+                        p.DecryptPayLoad();
                         break;
                 }
             }

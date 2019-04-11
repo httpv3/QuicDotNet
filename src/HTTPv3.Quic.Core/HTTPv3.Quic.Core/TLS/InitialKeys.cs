@@ -1,4 +1,6 @@
-﻿namespace HTTPv3.Quic.TLS
+﻿using HTTPv3.Quic.TLS.Messages.Extensions;
+
+namespace HTTPv3.Quic.TLS
 {
     // IETF quic-transport draft-19
     // 5.  Packet Protection
@@ -22,9 +24,9 @@
             ServerInitialSecret = EncryptionKeys.Hkdf256.Expand(InitialSecret, 32, EncryptionKeys.ServerIn);
 
             if (isServer)
-                EncryptionKeys = new EncryptionKeys(ServerInitialSecret, ClientInitialSecret);
+                EncryptionKeys = new EncryptionKeys(ServerInitialSecret, ClientInitialSecret, CipherSuite.TLS_AES_128_GCM_SHA256);
             else
-                EncryptionKeys = new EncryptionKeys(ClientInitialSecret, ServerInitialSecret);
+                EncryptionKeys = new EncryptionKeys(ClientInitialSecret, ServerInitialSecret, CipherSuite.TLS_AES_128_GCM_SHA256);
         }
     }
 }
