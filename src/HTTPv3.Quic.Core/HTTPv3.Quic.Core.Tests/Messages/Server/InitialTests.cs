@@ -17,7 +17,9 @@ namespace HTTPv3.Quic.Messages.Server
 
             Connection conn = new Connection()
             {
-                InitialKeys = set.ClientInitialKeys
+                InitialKeys = set.ClientInitialKeys,
+                ClientConnectionId = set.ClientId,
+                ServerConnectionId = set.ServerId,
             };
 
             var file = set[2];
@@ -31,8 +33,32 @@ namespace HTTPv3.Quic.Messages.Server
             file = set[3];
             packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
             obj = packet.ReadNextFrame();
-            //obj = packet.ReadNextFrame();
 
+            conn.ApplicationKeys = set.ClientApplicationKeys[0];
+            conn.EncryptionState = TLS.EncryptionState.Application;
+
+            file = set[4];
+            packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
+            obj = packet.ReadNextFrame();
+            obj = packet.ReadNextFrame();
+            obj = packet.ReadNextFrame();
+            obj = packet.ReadNextFrame();
+            obj = packet.ReadNextFrame();
+            obj = packet.ReadNextFrame();
+            obj = packet.ReadNextFrame();
+
+            conn.EncryptionState = TLS.EncryptionState.Handshake;
+
+            file = set[8];
+            packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
+            obj = packet.ReadNextFrame();
+
+            conn.EncryptionState = TLS.EncryptionState.Application;
+
+            file = set[9];
+            packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
+            obj = packet.ReadNextFrame();
+            obj = packet.ReadNextFrame();
         }
 
     }

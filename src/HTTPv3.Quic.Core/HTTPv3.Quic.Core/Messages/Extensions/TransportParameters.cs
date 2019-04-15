@@ -1,5 +1,6 @@
 ﻿using HTTPv3.Quic.Exceptions.Parsing;
 using HTTPv3.Quic.Messages.Common;
+using HTTPv3.Quic.TLS.Messages;
 using HTTPv3.Quic.TLS.Messages.Extensions;
 using System;
 using System.Collections.Generic;
@@ -12,10 +13,13 @@ namespace HTTPv3.Quic.Messages.Extensions
     internal class TransportParameters : Extension
     {
         public const int ArrayLength_NumBytes = 2;
+        public const int SupportedVersionsArrayLength_NumBytes = 1;
         public const int NamedGroupLength_NumBytes = 2;
         public const int StatelessResetToken_NumBytes = 16;
 
         public VersionTypes InitialVersion;
+        public VersionTypes NegotiatedVersion;
+        public List<VersionTypes> SupportedVersions = new List<VersionTypes>();
 
         public ConnectionId OriginalConnectionId;
 
@@ -63,12 +67,30 @@ namespace HTTPv3.Quic.Messages.Extensions
         public bool DisableMigration = false;
         public PreferredAddress PreferredAddress;
 
-        public TransportParameters(ReadOnlySpan<byte> data) : base(ExtensionType.QuicTransportParameters)
+        public TransportParameters(ReadOnlySpan<byte> data, HandshakeType handshakeType) : base(ExtensionType.QuicTransportParameters)
         {
-            data = data.ReadNextBytes(4, out ReadOnlySpan<byte> versionBytes)
-                       .ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+            // Backwards compatibility for Version 18
+            if (handshakeType == HandshakeType.ClientHello)
+            {
+                data = data.ReadNextBytes(4, out ReadOnlySpan<byte> versionBytes);
+                InitialVersion = LongHeader.ParseVersionType(versionBytes);
 
-            InitialVersion = LongHeader.ParseVersionType(versionBytes);
+            }
+            else if (handshakeType == HandshakeType.EncryptedExtensions)
+            {
+                data = data.ReadNextBytes(4, out ReadOnlySpan<byte> negotiatedVersion)
+                           .ReadNextTLSVariableLength(SupportedVersionsArrayLength_NumBytes, out var versionArrData);
+                NegotiatedVersion = LongHeader.ParseVersionType(negotiatedVersion);
+
+                while (!versionArrData.IsEmpty)
+                {
+                    versionArrData = versionArrData.ReadNextBytes(4, out ReadOnlySpan<byte> versionBytes);
+                    SupportedVersions.Add(LongHeader.ParseVersionType(versionBytes));
+                }
+            }
+
+            data = data.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+
 
             while (!arrData.IsEmpty)
             {

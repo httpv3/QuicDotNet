@@ -15,13 +15,19 @@ namespace HTTPv3.Quic
         public ServerConnectionId ServerConnectionId;
         public IPEndPoint RemoteEndPoint;
 
-        internal InitialKeys InitialKeys;
+        internal ApplicationKeys ApplicationKeys;
         internal HandshakeKeys HandshakeKeys;
+        internal InitialKeys InitialKeys;
+
+        public bool IsServer = false;
+
+        public ConnectionId MyConnectionId {  get { return IsServer ? ServerConnectionId as ConnectionId : ClientConnectionId as ConnectionId; } }
 
         internal Connection() { }
 
         internal void CreateInitialKeys(ServerConnectionId clientChosenServerId, bool isServer)
         {
+            IsServer = isServer;
             InitialKeys = new InitialKeys(clientChosenServerId.ConnectionIdBytes, isServer);
         }
 
@@ -35,6 +41,8 @@ namespace HTTPv3.Quic
                         return InitialKeys.EncryptionKeys;
                     case EncryptionState.Handshake:
                         return HandshakeKeys.EncryptionKeys;
+                    case EncryptionState.Application:
+                        return ApplicationKeys.EncryptionKeys;
                 }
 
                 return null;

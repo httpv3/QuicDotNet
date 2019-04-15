@@ -39,7 +39,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
                 case ExtensionType.ApplicationLayerProtocolNegotiation:
                     return new ApplicationLayerProtocolNegotiation(extBytes);
                 case ExtensionType.QuicTransportParameters:
-                    return new TransportParameters(extBytes);
+                    return new TransportParameters(extBytes, HandshakeType.ClientHello);
                 default:
                     return null;
             }
@@ -69,7 +69,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
                 case ExtensionType.ApplicationLayerProtocolNegotiation:
                     return new ApplicationLayerProtocolNegotiation(extBytes);
                 case ExtensionType.QuicTransportParameters:
-                    return new TransportParameters(extBytes);
+                    return new TransportParameters(extBytes, HandshakeType.EncryptedExtensions);
                 default:
                     return null;
             }

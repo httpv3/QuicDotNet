@@ -1,8 +1,6 @@
 ﻿using HTTPv3.Quic.Messages.Client;
 using HTTPv3.Quic.Messages.Frames;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace HTTPv3.Quic.Messages.Common
 {
@@ -10,7 +8,7 @@ namespace HTTPv3.Quic.Messages.Common
     {
         public Span<byte> Bytes;
         public Span<byte> Payload;
-        public Span<byte> PayloadCursor;
+        public ReadOnlySpan<byte> PayloadCursor;
         public bool IsServer;
         public PacketState State;
         public Connection Connection;
@@ -19,8 +17,12 @@ namespace HTTPv3.Quic.Messages.Common
         public Initial Initial;
         public Handshake Handshake;
 
+        public ShortHeader ShortHeader;
+
         public ReadOnlySpan<byte> HeaderProtectionMask;
         public Span<byte> StartOfPayload;
+
+        public uint PacketNumber;
 
         public Packet(Span<byte> bytes, bool isServer)
         {
@@ -32,9 +34,14 @@ namespace HTTPv3.Quic.Messages.Common
             LongHeader = default;
             Initial = default;
             Handshake = default;
+
+            ShortHeader = default;
+
             State = PacketState.Encrypted;
             HeaderProtectionMask = null;
             StartOfPayload = null;
+
+            PacketNumber = 0;
         }
 
         public static Packet ParseNewPacket(Span<byte> bytes, bool isServer, Connection conn = null)
@@ -77,6 +84,17 @@ namespace HTTPv3.Quic.Messages.Common
                         break;
                 }
             }
+            else
+            {
+                if (conn != null)
+                {
+                    p.Connection = conn;
+                }
+                p.ShortHeader = new ShortHeader(ref p);
+                p.HeaderProtectionMask = p.ShortHeader.ComputeDecryptionHeaderProtectionMask(ref p);
+                p.ShortHeader.RemoveHeaderProtection(ref p);
+                p.DecryptPayLoad();
+            }
 
             return p;
         }
@@ -86,24 +104,31 @@ namespace HTTPv3.Quic.Messages.Common
             if (PayloadCursor == null || PayloadCursor.Length == 0)
                 return null;
 
-            byte frameType;
-            PayloadCursor = PayloadCursor.ReadNextByte(out frameType);
-            if (frameType == 0x02)
-            {
-                PayloadCursor = PayloadCursor.Slice(4);
-                return null;
-                //return new AckFrame(ref this);
-            }
-            if (frameType == 0x06)
-                return new CryptoFrame(ref this);
+            PayloadCursor = PayloadCursor.ReadNextByte(out var frameByte);
 
-            return null;
+            var frameType = FrameTypes.Parse(frameByte);
+
+            switch (frameType)
+            {
+                case FrameType.Ack:
+                    return new AckFrame(ref this);
+                case FrameType.ConnectionCloseApplication:
+                    return new ConnectionCloseAppFrame(ref this);
+                case FrameType.ConnectionCloseQuic:
+                    return new ConnectionCloseQuicFrame(ref this);
+                case FrameType.Crypto:
+                    return new CryptoFrame(ref this);
+                case FrameType.NewConnectionId:
+                    return new NewConnectionIdFrame(ref this);
+                default:
+                    return null;
+            }
         }
 
         private void DecryptPayLoad()
         {
             int headerLength = Bytes.Length - StartOfPayload.Length;
-            PayloadCursor = Payload = Connection.CurrentKeys.DecryptPayload(Bytes.Slice(0, headerLength), StartOfPayload, Initial.PacketNumber);
+            PayloadCursor = Payload = Connection.CurrentKeys.DecryptPayload(Bytes.Slice(0, headerLength), StartOfPayload, PacketNumber);
             State = PacketState.Decrypted;
         }
     }

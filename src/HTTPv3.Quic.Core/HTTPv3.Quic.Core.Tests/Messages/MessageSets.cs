@@ -18,16 +18,24 @@ namespace HTTPv3.Quic.Messages
         private readonly Dictionary<int, DataFile> files = new Dictionary<int, DataFile>();
         public DataFile this[int i] { get { return files[i].Clone(); } }
 
+        public ClientConnectionId ClientId;
+        public ServerConnectionId ServerId;
+
         public InitialKeys ClientInitialKeys;
         public InitialKeys ServerInitialKeys;
+
         public HandshakeKeys ClientHandshakeKeys;
         public HandshakeKeys ServerHandshakeKeys;
+
         public ApplicationKeys[] ClientApplicationKeys;
         public ApplicationKeys[] ServerApplicationKeys;
 
         private MessageSets(int setNum)
         {
             var index = JsonConvert.DeserializeObject<Index>(File.ReadAllText(ConstructFileName(setNum, "index.json")));
+
+            ClientId = new ClientConnectionId(index.ClientId.ToByteArrayFromHex());
+            ServerId = new ServerConnectionId(index.ServerId.ToByteArrayFromHex());
 
             foreach (var file in index.Files)
             {
@@ -87,6 +95,9 @@ namespace HTTPv3.Quic.Messages
 
     public class Index
     {
+        public string ClientId;
+        public string ServerId;
+
         public DataFile[] Files;
         public Secrets Secrets;
     }

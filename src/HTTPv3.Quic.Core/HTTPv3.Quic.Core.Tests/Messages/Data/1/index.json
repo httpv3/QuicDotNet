@@ -1,19 +1,61 @@
 {
+  "clientId": "2a854833d96efe9c",
+  "serverId": "fbe795081ceabed2",
   "files": [
     {
       "sequence": 1,
-      "name": "c.initial.bin",
+      "name": "1.c.initial.bin",
       "source": "client"
     },
     {
       "sequence": 2,
-      "name": "s.initial.bin",
+      "name": "2.s.initial.bin",
       "source": "server"
     },
     {
       "sequence": 3,
-      "name": "s.handshake.bin",
+      "name": "3.s.handshake.bin",
       "source": "server"
+    },
+    {
+      "sequence": 4,
+      "name": "4.s.payload.bin",
+      "source": "server"
+    },
+    {
+      "sequence": 5,
+      "name": "5.c.initial.bin",
+      "source": "client"
+    },
+    {
+      "sequence": 6,
+      "name": "6.c.handshake.bin",
+      "source": "client"
+    },
+    {
+      "sequence": 7,
+      "name": "7.c.payload.bin",
+      "source": "client"
+    },
+    {
+      "sequence": 8,
+      "name": "8.s.handshake.bin",
+      "source": "server"
+    },
+    {
+      "sequence": 9,
+      "name": "9.s.payload.bin",
+      "source": "server"
+    },
+    {
+      "sequence": 10,
+      "name": "10.c.payload.bin",
+      "source": "client"
+    },
+    {
+      "sequence": 11,
+      "name": "11.c.payload.bin",
+      "source": "client"
     }
   ],
   "secrets": {

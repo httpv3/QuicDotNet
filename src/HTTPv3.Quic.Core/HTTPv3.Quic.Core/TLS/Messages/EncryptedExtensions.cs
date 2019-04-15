@@ -20,7 +20,7 @@ namespace HTTPv3.Quic.TLS.Messages
         public byte[] Random;
         public List<Extensions.Extension> ExtensionList = new List<Extensions.Extension>();
 
-        public EncryptedExtensions(ReadOnlySpan<byte> data) : base(HandshakeType.ServerHello)
+        public EncryptedExtensions(ReadOnlySpan<byte> data) : base(HandshakeType.EncryptedExtensions)
         {
             data = data.ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out var extensionBytes);
 

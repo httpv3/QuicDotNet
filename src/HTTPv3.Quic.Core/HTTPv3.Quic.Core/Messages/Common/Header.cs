@@ -22,6 +22,9 @@ namespace HTTPv3.Quic.Messages.Common
         public const int TypeSpecificBits_Offset = 0;
         public const byte TypeSpecificBits_Mask = 0x0F;
 
+        public const int KeyPhase_Offset = 0;
+        public const byte KeyPhase_Mask = 0x04;
+
         public const int Version_Offset = 1;
         public const byte Version_Length = 4;
 

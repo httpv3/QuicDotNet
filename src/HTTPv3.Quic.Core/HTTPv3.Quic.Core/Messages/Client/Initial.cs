@@ -13,7 +13,6 @@ namespace HTTPv3.Quic.Messages.Client
         public readonly int PayloadAndPacketNumberLength;
 
         public int PacketNumLength;
-        public uint PacketNumber;
 
         public readonly Span<byte> StartOfPacketNumber;
 
@@ -28,7 +27,6 @@ namespace HTTPv3.Quic.Messages.Client
                                      .ReadNextVariableInt(out PayloadAndPacketNumberLength);
 
             PacketNumLength = 0;
-            PacketNumber = 0;
         }
 
         internal void RemoveHeaderProtection(ref Packet p)
@@ -38,7 +36,7 @@ namespace HTTPv3.Quic.Messages.Client
             for (int i = 0, j = 1; i < PacketNumLength; i++, j++)
                 StartOfPacketNumber[i] ^= p.HeaderProtectionMask[j];
 
-            p.StartOfPayload = StartOfPacketNumber.ReadNextNumber(PacketNumLength, out PacketNumber);
+            p.StartOfPayload = StartOfPacketNumber.ReadNextNumber(PacketNumLength, out p.PacketNumber);
         }
 
 
