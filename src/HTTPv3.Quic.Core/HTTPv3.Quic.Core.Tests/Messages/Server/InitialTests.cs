@@ -15,51 +15,29 @@ namespace HTTPv3.Quic.Messages.Server
         {
             var set = MessageSets.Set1;
 
-            Connection conn = new Connection()
+            foreach (var file in set)
             {
-                InitialKeys = set.ClientInitialKeys,
-                ClientConnectionId = set.ClientId,
-                ServerConnectionId = set.ServerId,
-            };
-
-            var file = set[2];
-            var packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
-            var obj = packet.ReadNextFrame();
-            obj = packet.ReadNextFrame();
-
-            conn.HandshakeKeys = set.ClientHandshakeKeys;
-            conn.EncryptionState = TLS.EncryptionState.Handshake;
-
-            file = set[3];
-            packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
-            obj = packet.ReadNextFrame();
-
-            conn.ApplicationKeys = set.ClientApplicationKeys[0];
-            conn.EncryptionState = TLS.EncryptionState.Application;
-
-            file = set[4];
-            packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
-            obj = packet.ReadNextFrame();
-            obj = packet.ReadNextFrame();
-            obj = packet.ReadNextFrame();
-            obj = packet.ReadNextFrame();
-            obj = packet.ReadNextFrame();
-            obj = packet.ReadNextFrame();
-            obj = packet.ReadNextFrame();
-
-            conn.EncryptionState = TLS.EncryptionState.Handshake;
-
-            file = set[8];
-            packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
-            obj = packet.ReadNextFrame();
-
-            conn.EncryptionState = TLS.EncryptionState.Application;
-
-            file = set[9];
-            packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
-            obj = packet.ReadNextFrame();
-            obj = packet.ReadNextFrame();
+                var conn = file.FromClient ? set.ServerConnection : set.ClientConnection;
+                var packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
+                packet.ReadAllFrames();
+            }
         }
 
+        [TestMethod]
+        public void HappyPathSet2()
+        {
+            var set = MessageSets.Set2;
+
+            foreach (var file in set)
+            {
+                var conn = file.FromClient ? set.ServerConnection : set.ClientConnection;
+                while (file.Data.Length > 0)
+                {
+                    var packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
+                    packet.ReadAllFrames();
+                    file.Data = packet.Bytes.ToArray();
+                }
+            }
+        }
     }
 }

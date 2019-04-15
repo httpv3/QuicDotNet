@@ -11,6 +11,7 @@ namespace HTTPv3.Quic.Messages.Client
         public readonly int PayloadAndPacketNumberLength;
 
         public int PacketNumLength;
+        public int PayloadLength;
 
         public readonly Span<byte> StartOfPacketNumber;
 
@@ -23,6 +24,7 @@ namespace HTTPv3.Quic.Messages.Client
             StartOfPacketNumber = afterHeader.ReadNextVariableInt(out PayloadAndPacketNumberLength);
 
             PacketNumLength = 0;
+            PayloadLength = 0;
         }
 
         internal void RemoveHeaderProtection(ref Packet p)
@@ -32,21 +34,24 @@ namespace HTTPv3.Quic.Messages.Client
             for (int i = 0, j = 1; i < PacketNumLength; i++, j++)
                 StartOfPacketNumber[i] ^= p.HeaderProtectionMask[j];
 
-            p.StartOfPayload = StartOfPacketNumber.ReadNextNumber(PacketNumLength, out p.PacketNumber);
+            var startOfPayload = StartOfPacketNumber.ReadNextNumber(PacketNumLength, out p.PacketNumber);
+            p.HeaderBytes = p.Bytes.Slice(0, p.Bytes.Length - startOfPayload.Length);
+            PayloadLength = PayloadAndPacketNumberLength - PacketNumLength;
+            p.Bytes = startOfPayload.ReadNextBytes(PayloadLength, out p.EncryptedPayload);
         }
 
 
         public ReadOnlySpan<byte> ComputeDecryptionHeaderProtectionMask(ref Packet p)
         {
             var sample = StartOfPacketNumber.Slice(4, 16);
-            return p.Connection.CurrentKeys.ComputeDecryptionHeaderProtectionMask(sample);
+            return p.Connection.HandshakeKeys.EncryptionKeys.ComputeDecryptionHeaderProtectionMask(sample);
         }
 
 
         public ReadOnlySpan<byte> ComputeEncryptionHeaderProtectionMask(ref Packet p)
         {
             var sample = StartOfPacketNumber.Slice(4, 16);
-            return p.Connection.CurrentKeys.ComputeEncryptionHeaderProtectionMask(sample);
+            return p.Connection.HandshakeKeys.EncryptionKeys.ComputeEncryptionHeaderProtectionMask(sample);
         }
     }
 }

@@ -4,6 +4,7 @@ using HTTPv3.Quic.TLS.Messages.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,9 +12,10 @@ using System.Text;
 
 namespace HTTPv3.Quic.Messages
 {
-    class MessageSets
+    class MessageSets : IEnumerable<DataFile>
     {
         public static MessageSets Set1 = new MessageSets(1);
+        public static MessageSets Set2 = new MessageSets(2);
 
         private readonly Dictionary<int, DataFile> files = new Dictionary<int, DataFile>();
         public DataFile this[int i] { get { return files[i].Clone(); } }
@@ -29,6 +31,9 @@ namespace HTTPv3.Quic.Messages
 
         public ApplicationKeys[] ClientApplicationKeys;
         public ApplicationKeys[] ServerApplicationKeys;
+
+        public Connection ClientConnection;
+        public Connection ServerConnection;
 
         private MessageSets(int setNum)
         {
@@ -75,6 +80,24 @@ namespace HTTPv3.Quic.Messages
                 ClientApplicationKeys = cKeys.ToArray();
                 ServerApplicationKeys = sKeys.ToArray();
             }
+
+            ClientConnection = new Connection()
+            {
+                InitialKeys = ClientInitialKeys,
+                ClientConnectionId = ClientId,
+                ServerConnectionId = ServerId,
+                HandshakeKeys = ClientHandshakeKeys,
+                ApplicationKeys = ClientApplicationKeys[0]
+            };
+
+            ServerConnection = new Connection()
+            {
+                InitialKeys = ServerInitialKeys,
+                ClientConnectionId = ClientId,
+                ServerConnectionId = ServerId,
+                HandshakeKeys = ServerHandshakeKeys,
+                ApplicationKeys = ServerApplicationKeys[0]
+            };
         }
 
         private byte[] LoadBinFile(int setNum, string filename)
@@ -90,6 +113,17 @@ namespace HTTPv3.Quic.Messages
         private string ConstructFileName(int setNum, string filename)
         {
             return $"../../../Messages/Data/{setNum}/{filename}";
+        }
+
+        IEnumerator<DataFile> IEnumerable<DataFile>.GetEnumerator()
+        {
+            foreach(var file in files.Values.OrderBy(x=>x.Sequence))
+                yield return file.Clone();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            throw new NotImplementedException();
         }
     }
 

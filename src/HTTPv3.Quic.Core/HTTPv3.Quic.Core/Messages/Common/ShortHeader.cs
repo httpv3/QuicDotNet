@@ -41,21 +41,24 @@ namespace HTTPv3.Quic.Messages.Common
             for (int i = 0, j = 1; i < packetNumLength; i++, j++)
                 StartOfPacketNumber[i] ^= p.HeaderProtectionMask[j];
 
-            p.StartOfPayload = StartOfPacketNumber.ReadNextNumber(packetNumLength, out p.PacketNumber);
+            var startOfPayload = StartOfPacketNumber.ReadNextNumber(packetNumLength, out p.PacketNumber);
+            p.HeaderBytes = p.Bytes.Slice(0, p.Bytes.Length - startOfPayload.Length);
+            p.EncryptedPayload = startOfPayload;
+            p.Bytes = Span<byte>.Empty;
         }
 
 
         public ReadOnlySpan<byte> ComputeDecryptionHeaderProtectionMask(ref Packet p)
         {
             var sample = StartOfPacketNumber.Slice(4, 16);
-            return p.Connection.CurrentKeys.ComputeDecryptionHeaderProtectionMask(sample);
+            return p.Connection.ApplicationKeys.EncryptionKeys.ComputeDecryptionHeaderProtectionMask(sample);
         }
 
 
         public ReadOnlySpan<byte> ComputeEncryptionHeaderProtectionMask(ref Packet p)
         {
             var sample = StartOfPacketNumber.Slice(4, 16);
-            return p.Connection.CurrentKeys.ComputeEncryptionHeaderProtectionMask(sample);
+            return p.Connection.ApplicationKeys.EncryptionKeys.ComputeEncryptionHeaderProtectionMask(sample);
         }
     }
 }

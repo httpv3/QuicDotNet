@@ -20,7 +20,8 @@ namespace HTTPv3.Quic.Messages.Common
         public ShortHeader ShortHeader;
 
         public ReadOnlySpan<byte> HeaderProtectionMask;
-        public Span<byte> StartOfPayload;
+        public Span<byte> HeaderBytes;
+        public Span<byte> EncryptedPayload;
 
         public uint PacketNumber;
 
@@ -39,7 +40,8 @@ namespace HTTPv3.Quic.Messages.Common
 
             State = PacketState.Encrypted;
             HeaderProtectionMask = null;
-            StartOfPayload = null;
+            HeaderBytes = null;
+            EncryptedPayload = null;
 
             PacketNumber = 0;
         }
@@ -68,19 +70,21 @@ namespace HTTPv3.Quic.Messages.Common
                 {
                     case LongHeaderPacketTypes.Initial:
                         p.Initial = new Initial(ref p);
+
                         p.HeaderProtectionMask = p.Initial.ComputeDecryptionHeaderProtectionMask(ref p);
                         p.LongHeader.RemoveHeaderProtection(ref p);
-
                         p.Initial.RemoveHeaderProtection(ref p);
-                        p.DecryptPayLoad();
+
+                        p.DecryptPayLoad(p.Connection.InitialKeys.EncryptionKeys);
                         break;
                     case LongHeaderPacketTypes.Handshake:
                         p.Handshake = new Handshake(ref p);
+
                         p.HeaderProtectionMask = p.Handshake.ComputeDecryptionHeaderProtectionMask(ref p);
                         p.LongHeader.RemoveHeaderProtection(ref p);
-
                         p.Handshake.RemoveHeaderProtection(ref p);
-                        p.DecryptPayLoad();
+
+                        p.DecryptPayLoad(p.Connection.HandshakeKeys.EncryptionKeys);
                         break;
                 }
             }
@@ -91,12 +95,22 @@ namespace HTTPv3.Quic.Messages.Common
                     p.Connection = conn;
                 }
                 p.ShortHeader = new ShortHeader(ref p);
+
                 p.HeaderProtectionMask = p.ShortHeader.ComputeDecryptionHeaderProtectionMask(ref p);
                 p.ShortHeader.RemoveHeaderProtection(ref p);
-                p.DecryptPayLoad();
+
+                p.DecryptPayLoad(p.Connection.ApplicationKeys.EncryptionKeys);
             }
 
             return p;
+        }
+
+        public void ReadAllFrames()
+        {
+            while(!PayloadCursor.IsEmpty)
+            {
+                var frame = ReadNextFrame();
+            }
         }
 
         public object ReadNextFrame()
@@ -125,10 +139,9 @@ namespace HTTPv3.Quic.Messages.Common
             }
         }
 
-        private void DecryptPayLoad()
+        private void DecryptPayLoad(TLS.EncryptionKeys keys)
         {
-            int headerLength = Bytes.Length - StartOfPayload.Length;
-            PayloadCursor = Payload = Connection.CurrentKeys.DecryptPayload(Bytes.Slice(0, headerLength), StartOfPayload, PacketNumber);
+            PayloadCursor = Payload = keys.DecryptPayload(HeaderBytes, EncryptedPayload, PacketNumber);
             State = PacketState.Decrypted;
         }
     }
