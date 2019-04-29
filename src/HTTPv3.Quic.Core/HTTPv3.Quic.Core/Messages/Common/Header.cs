@@ -7,7 +7,7 @@ namespace HTTPv3.Quic.Messages.Common
     // IETF quic-transport draft-19
     // 17.2.  Long Header Packets
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-17.2
-    internal ref struct Header
+    internal class Header
     {
         public const int HeaderForm_Offset = 0;
         public const byte HeaderForm_Mask = 0x80;

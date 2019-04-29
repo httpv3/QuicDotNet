@@ -40,9 +40,9 @@ namespace HTTPv3.Quic.Messages.Common
             VersionType = ParseVersionType(Version);
 
             int DCIL = ParseConnIDLength((byte)((packet.Bytes[Header.DCIL_Offset] & Header.DCIL_Mask) >> Header.DCIL_Shift));
-            int SCIL = ParseConnIDLength((byte)((packet.Bytes[Header.SCIL_Offset] & Header.SCIL_Mask)));
+            int SCIL = ParseConnIDLength((byte)(packet.Bytes[Header.SCIL_Offset] & Header.SCIL_Mask));
 
-            int destionationConnIdOffset = Header.StartOfConnIDs_Offset;
+            int destionationConnIdOffset = Header.StartOfConnIDs_Offset; 
             int sourceConnIdOffset = destionationConnIdOffset + DCIL;
             var length = sourceConnIdOffset + SCIL;
 

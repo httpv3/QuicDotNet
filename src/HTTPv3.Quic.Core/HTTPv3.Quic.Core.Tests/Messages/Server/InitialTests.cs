@@ -23,21 +23,21 @@ namespace HTTPv3.Quic.Messages.Server
             }
         }
 
-        [TestMethod]
-        public void HappyPathSet2()
-        {
-            var set = MessageSets.Set2;
+        //[TestMethod]
+        //public void HappyPathSet2()
+        //{
+        //    var set = MessageSets.Set2;
 
-            foreach (var file in set)
-            {
-                var conn = file.FromClient ? set.ServerConnection : set.ClientConnection;
-                while (file.Data.Length > 0)
-                {
-                    var packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
-                    packet.ReadAllFrames();
-                    file.Data = packet.Bytes.ToArray();
-                }
-            }
-        }
+        //    foreach (var file in set)
+        //    {
+        //        var conn = file.FromClient ? set.ServerConnection : set.ClientConnection;
+        //        while (file.Data.Length > 0)
+        //        {
+        //            var packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
+        //            packet.ReadAllFrames();
+        //            file.Data = packet.Bytes.ToArray();
+        //        }
+        //    }
+        //}
     }
 }
