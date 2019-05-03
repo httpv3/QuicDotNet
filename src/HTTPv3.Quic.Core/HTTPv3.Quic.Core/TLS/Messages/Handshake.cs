@@ -25,7 +25,7 @@ namespace HTTPv3.Quic.TLS.Messages
             switch (type)
             {
                 case HandshakeType.ClientHello:
-                    return new ClientHello(extensionBytes);
+                    return ClientHello.Parse(extensionBytes);
                 case HandshakeType.ServerHello:
                     return new ServerHello(extensionBytes);
                 case HandshakeType.EncryptedExtensions:

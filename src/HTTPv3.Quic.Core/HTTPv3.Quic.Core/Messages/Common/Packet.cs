@@ -46,7 +46,7 @@ namespace HTTPv3.Quic.Messages.Common
             PacketNumber = 0;
         }
 
-        public static Packet ParseNewPacket(Span<byte> bytes, bool isServer, Connection conn = null)
+        public static Packet ParseNewPacket(Span<byte> bytes, bool isServer, Connection conn)
         {
             Packet p = new Packet(bytes, isServer);
 
@@ -54,17 +54,7 @@ namespace HTTPv3.Quic.Messages.Common
             {
                 p.LongHeader = new LongHeader(ref p);
 
-                if (conn != null)
-                {
-                    p.Connection = conn;
-                }
-                else
-                {
-                    if (isServer)
-                        p.Connection = ConnectionManager.GetOrCreate(new ClientConnectionId(p.LongHeader.SourceConnID.ToArray()), new ServerConnectionId(p.LongHeader.DestinationConnID.ToArray()), isServer);
-                    else
-                        p.Connection = ConnectionManager.GetOrCreate(new ClientConnectionId(p.LongHeader.DestinationConnID.ToArray()), new ServerConnectionId(p.LongHeader.SourceConnID.ToArray()), isServer);
-                }
+                p.Connection = conn;
 
                 switch (p.LongHeader.LongPacketType)
                 {
@@ -75,7 +65,7 @@ namespace HTTPv3.Quic.Messages.Common
                         p.LongHeader.RemoveHeaderProtection(ref p);
                         p.Initial.RemoveHeaderProtection(ref p);
 
-                        p.DecryptPayLoad(p.Connection.InitialKeys.EncryptionKeys);
+                        p.DecryptPayLoad(p.Connection.TLSConn.InitialKeys.EncryptionKeys);
                         break;
                     case LongHeaderPacketTypes.Handshake:
                         p.Handshake = new Handshake(ref p);
@@ -84,7 +74,7 @@ namespace HTTPv3.Quic.Messages.Common
                         p.LongHeader.RemoveHeaderProtection(ref p);
                         p.Handshake.RemoveHeaderProtection(ref p);
 
-                        p.DecryptPayLoad(p.Connection.HandshakeKeys.EncryptionKeys);
+                        p.DecryptPayLoad(p.Connection.TLSConn.HandshakeKeys.EncryptionKeys);
                         break;
                 }
             }
@@ -99,7 +89,7 @@ namespace HTTPv3.Quic.Messages.Common
                 p.HeaderProtectionMask = p.ShortHeader.ComputeDecryptionHeaderProtectionMask(ref p);
                 p.ShortHeader.RemoveHeaderProtection(ref p);
 
-                p.DecryptPayLoad(p.Connection.ApplicationKeys.EncryptionKeys);
+                p.DecryptPayLoad(p.Connection.TLSConn.ApplicationKeys.EncryptionKeys);
             }
 
             return p;

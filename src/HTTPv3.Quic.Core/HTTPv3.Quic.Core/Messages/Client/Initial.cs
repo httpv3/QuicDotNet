@@ -49,14 +49,14 @@ namespace HTTPv3.Quic.Messages.Client
         public ReadOnlySpan<byte> ComputeDecryptionHeaderProtectionMask(ref Packet p)
         {
             var sample = StartOfPacketNumber.Slice(4, 16);
-            return p.Connection.InitialKeys.EncryptionKeys.ComputeDecryptionHeaderProtectionMask(sample);
+            return p.Connection.TLSConn.InitialKeys.EncryptionKeys.ComputeDecryptionHeaderProtectionMask(sample);
         }
 
 
         public ReadOnlySpan<byte> ComputeEncryptionHeaderProtectionMask(ref Packet p)
         {
             var sample = StartOfPacketNumber.Slice(4, 16);
-            return p.Connection.InitialKeys.EncryptionKeys.ComputeEncryptionHeaderProtectionMask(sample);
+            return p.Connection.TLSConn.InitialKeys.EncryptionKeys.ComputeEncryptionHeaderProtectionMask(sample);
         }
     }
 }

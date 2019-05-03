@@ -1,4 +1,6 @@
-﻿using System;
+﻿using HTTPv3.Quic.Messages.Extensions;
+using HTTPv3.Quic.TLS.Messages.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -18,12 +20,27 @@ namespace HTTPv3.Quic.TLS.Messages
 
         public uint ProtocolVersion;
         public byte[] Random;
-        public List<Extensions.Extension> ExtensionList = new List<Extensions.Extension>();
 
-        public ClientHello(ReadOnlySpan<byte> data) : base(HandshakeType.ClientHello)
+        string ServerName;
+        List<ProtocolVersion> SupportedVersions = new List<ProtocolVersion>();
+        List<NamedGroup> SupportedGroups = new List<NamedGroup>();
+        List<SignatureScheme> SignatureAlgorithms = new List<SignatureScheme>();
+        KeyShareClientHello KeyShareClientHello;
+        PskKeyExchangeModes PskKeyExchangeModes;
+        ApplicationLayerProtocolNegotiation ApplicationLayerProtocolNegotiation;
+        TransportParameters TransportParameters;
+
+        public ClientHello() : base(HandshakeType.ClientHello)
         {
-            data = data.ReadNextNumber(ProtocolVersion_NumBytes, out ProtocolVersion)
-                       .ReadNextBytes(Random_NumBytes, out Random)
+
+        }
+
+        public static ClientHello Parse(ReadOnlySpan<byte> data)
+        {
+            ClientHello ret = new ClientHello();
+
+            data = data.ReadNextNumber(ProtocolVersion_NumBytes, out ret.ProtocolVersion)
+                       .ReadNextBytes(Random_NumBytes, out ret.Random)
                        .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out var legacySessionId)
                        .ReadNextTLSVariableLength(CipherSuitesLength_NumBytes, out var cipherSuiteBytes)
                        .ReadNextBytes(LegacyCompressionMethods_NumBytes, out ReadOnlySpan<byte> legacyCompressionMethods)
@@ -31,8 +48,53 @@ namespace HTTPv3.Quic.TLS.Messages
 
             while (!extensionBytes.IsEmpty)
             {
-                ExtensionList.Add(Extensions.Extension.ParseClientHello(ref extensionBytes));
+                ret.ParseExtension(ref extensionBytes);
             }
+
+            return ret;
+        }
+
+        private void ParseExtension(ref ReadOnlySpan<byte> data)
+        {
+            data = data.ReadNextNumber(Extension.Type_NumBytes, out uint typeInt)
+                       .ReadNextTLSVariableLength(Extension.Length_NumBytes, out var extBytes);
+
+            ExtensionType type = (ExtensionType)typeInt;
+
+            switch (type)
+            {
+                case ExtensionType.ServerName:
+                    ServerName = ServerNameList.Parse(extBytes);
+                    break;
+                case ExtensionType.SupportedVersions:
+                    SupportedVersions = Extensions.SupportedVersions.ParseClientHello(extBytes);
+                    break;
+                case ExtensionType.SupportedGroups:
+                    SupportedGroups = Extensions.SupportedGroups.Parse(extBytes);
+                    break;
+                case ExtensionType.SignatureAlgorithms:
+                    SignatureAlgorithms = Extensions.SignatureAlgorithms.Parse(extBytes);
+                    break;
+                case ExtensionType.KeyShare:
+                    KeyShareClientHello = new KeyShareClientHello(extBytes);
+                    break;
+                case ExtensionType.PskKeyExchangeModes:
+                    PskKeyExchangeModes = new PskKeyExchangeModes(extBytes);
+                    break;
+                case ExtensionType.ApplicationLayerProtocolNegotiation:
+                    ApplicationLayerProtocolNegotiation = new ApplicationLayerProtocolNegotiation(extBytes);
+                    break;
+                case ExtensionType.QuicTransportParameters:
+                    TransportParameters = TransportParameters.Parse(extBytes, HandshakeType.ClientHello);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public void Write()
+        {
+
         }
     }
 }

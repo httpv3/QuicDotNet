@@ -1,8 +1,10 @@
-﻿using HTTPv3.Quic.TLS;
+﻿using HTTPv3.Quic.Messages.Extensions;
+using HTTPv3.Quic.TLS;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace HTTPv3.Quic
 {
@@ -13,21 +15,25 @@ namespace HTTPv3.Quic
         public ClientConnectionId ClientConnectionId;
         public ServerConnectionId ServerConnectionId;
         public IPEndPoint RemoteEndPoint;
+        public string ServerName;
 
-        internal ApplicationKeys ApplicationKeys;
-        internal HandshakeKeys HandshakeKeys;
-        internal InitialKeys InitialKeys;
+        internal TLS.Connection TLSConn;
 
         public bool IsServer = false;
 
         public ConnectionId MyConnectionId {  get { return IsServer ? ServerConnectionId as ConnectionId : ClientConnectionId as ConnectionId; } }
 
-        internal Connection() { }
-
-        internal void CreateInitialKeys(ServerConnectionId clientChosenServerId, bool isServer)
+        internal Connection(byte[] clientChosenDestinationId, bool isServer)
         {
             IsServer = isServer;
-            InitialKeys = new InitialKeys(clientChosenServerId.ConnectionIdBytes, isServer);
+            TLSConn = new TLS.Connection(clientChosenDestinationId, isServer);
+        }
+
+        internal async Task SendConnect()
+        {
+            var buffer = new byte[1500];
+
+            TLSConn.WriteClientHello(buffer, ServerName);
         }
     }
 }

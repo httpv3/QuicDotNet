@@ -4,15 +4,13 @@ using System.Text;
 
 namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
-    internal class ServerNameList : Extension
+    internal class ServerNameList
     {
         public const int ArrayLength_NumBytes = 2;
         public const int NameLength_NumBytes = 2;
         public const byte HostNameType = 0;
 
-        public byte[] Name;
-
-        public ServerNameList(ReadOnlySpan<byte> data) : base(ExtensionType.ServerName)
+        public static string Parse(ReadOnlySpan<byte> data)
         {
             data.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
 
@@ -22,11 +20,10 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
                                  .ReadNextTLSVariableLength(NameLength_NumBytes, out var name);
 
                 if (type == HostNameType)
-                {
-                    Name = name.ToArray();
-                    return;
-                }
+                    return Encoding.ASCII.GetString(name.ToArray());
             }
+
+            return null;
         }
     }
 }

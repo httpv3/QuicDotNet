@@ -19,7 +19,7 @@ namespace HTTPv3.Quic
             HashCode = Hasher.ComputeHash(connectionIdBytes).Hash.ToInt32(true);
         }
 
-        public static byte[] Generate(int length = DefaultLength)
+        protected static byte[] GenerateBytes(int length = DefaultLength)
         {
             return SecureRandom.GetNextBytes(prng, length);
         }

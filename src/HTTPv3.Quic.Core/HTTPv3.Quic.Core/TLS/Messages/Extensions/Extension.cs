@@ -15,36 +15,6 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
             ExtensionType = extensionType;
         }
 
-        public static Extension ParseClientHello(ref ReadOnlySpan<byte> data)
-        {
-            data = data.ReadNextNumber(Type_NumBytes, out uint typeInt)
-                       .ReadNextTLSVariableLength(Length_NumBytes, out var extBytes);
-
-            ExtensionType type = (ExtensionType)typeInt;
-
-            switch (type)
-            {
-                case ExtensionType.ServerName:
-                    return new ServerNameList(extBytes);
-                case ExtensionType.SupportedVersions:
-                    return new SupportedVersionsClientHello(extBytes);
-                case ExtensionType.SupportedGroups:
-                    return new SupportedGroups(extBytes);
-                case ExtensionType.SignatureAlgorithms:
-                    return new SignatureAlgorithms(extBytes);
-                case ExtensionType.KeyShare:
-                    return new KeyShareClientHello(extBytes);
-                case ExtensionType.PskKeyExchangeModes:
-                    return new PskKeyExchangeModes(extBytes);
-                case ExtensionType.ApplicationLayerProtocolNegotiation:
-                    return new ApplicationLayerProtocolNegotiation(extBytes);
-                case ExtensionType.QuicTransportParameters:
-                    return new TransportParameters(extBytes, HandshakeType.ClientHello);
-                default:
-                    return null;
-            }
-        }
-
         public static Extension ParseServerHello(ref ReadOnlySpan<byte> data)
         {
             data = data.ReadNextNumber(Type_NumBytes, out uint typeInt)
@@ -59,9 +29,9 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
                 case ExtensionType.SupportedVersions:
                     return new SupportedVersionsServerHello(extBytes);
                 case ExtensionType.SupportedGroups:
-                    return new SupportedGroups(extBytes);
+                    return null; // new SupportedGroups(extBytes);
                 case ExtensionType.SignatureAlgorithms:
-                    return new SignatureAlgorithms(extBytes);
+                    return null; // SignatureAlgorithms(extBytes);
                 case ExtensionType.KeyShare:
                     return new KeyShareServerHello(extBytes);
                 case ExtensionType.PskKeyExchangeModes:
@@ -69,7 +39,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
                 case ExtensionType.ApplicationLayerProtocolNegotiation:
                     return new ApplicationLayerProtocolNegotiation(extBytes);
                 case ExtensionType.QuicTransportParameters:
-                    return new TransportParameters(extBytes, HandshakeType.EncryptedExtensions);
+                    return TransportParameters.Parse(extBytes, HandshakeType.EncryptedExtensions);
                 default:
                     return null;
             }

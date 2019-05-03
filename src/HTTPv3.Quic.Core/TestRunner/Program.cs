@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HTTPv3.Quic;
+using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -12,11 +13,10 @@ namespace TestRunner
         }
         async static Task Run()
         {
-            UdpClient client = new UdpClient("quic.ogre.com", 4433);
+            QuicClient client = new QuicClient("quic.ogre.com", 4433);
+            await client.Connect();
 
-            byte[] hello = new byte[] { (byte)'h', (byte)'e', (byte)'l', (byte)'l', (byte)'o' };
-            await client.SendAsync(hello, 5);
-            var res = await client.ReceiveAsync();
+            //var res = await client.Request("index.html");
         }
     }
 }

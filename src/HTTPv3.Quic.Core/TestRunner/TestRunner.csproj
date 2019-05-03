@@ -6,4 +6,8 @@
     <LangVersion>7.2</LangVersion>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\HTTPv3.Quic.Core\HTTPv3.Quic.Core.csproj" />
+  </ItemGroup>
+
 </Project>

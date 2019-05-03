@@ -23,12 +23,6 @@ namespace HTTPv3.Quic.Messages
         public ClientConnectionId ClientId;
         public ServerConnectionId ServerId;
 
-        public InitialKeys ClientInitialKeys;
-        public InitialKeys ServerInitialKeys;
-
-        public HandshakeKeys ClientHandshakeKeys;
-        public HandshakeKeys ServerHandshakeKeys;
-
         public ApplicationKeys[] ClientApplicationKeys;
         public ApplicationKeys[] ServerApplicationKeys;
 
@@ -54,16 +48,22 @@ namespace HTTPv3.Quic.Messages
 
         private void LoadSecrets(Secrets secrets)
         {
-            if (!string.IsNullOrWhiteSpace(secrets.Initial))
+            ClientConnection = new Connection(secrets.Initial.ToByteArrayFromHex().ToArray(), false)
             {
-                ClientInitialKeys = new InitialKeys(secrets.Initial.ToByteArrayFromHex().ToArray(), false);
-                ServerInitialKeys = new InitialKeys(secrets.Initial.ToByteArrayFromHex().ToArray(), true);
-            }
+                ClientConnectionId = ClientId,
+                ServerConnectionId = ServerId,
+            };
+
+            ServerConnection = new Connection(secrets.Initial.ToByteArrayFromHex().ToArray(), true)
+            {
+                ClientConnectionId = ClientId,
+                ServerConnectionId = ServerId,
+            };
 
             if (secrets.Handshake != null)
             {
-                ClientHandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, false);
-                ServerHandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, true);
+                ClientConnection.TLSConn.HandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, false);
+                ServerConnection.TLSConn.HandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, true);
             }
 
             if (secrets.Application != null)
@@ -79,25 +79,10 @@ namespace HTTPv3.Quic.Messages
 
                 ClientApplicationKeys = cKeys.ToArray();
                 ServerApplicationKeys = sKeys.ToArray();
+
+                ClientConnection.TLSConn.ApplicationKeys = ClientApplicationKeys[0];
+                ServerConnection.TLSConn.ApplicationKeys = ServerApplicationKeys[0];
             }
-
-            ClientConnection = new Connection()
-            {
-                InitialKeys = ClientInitialKeys,
-                ClientConnectionId = ClientId,
-                ServerConnectionId = ServerId,
-                HandshakeKeys = ClientHandshakeKeys,
-                ApplicationKeys = ClientApplicationKeys[0]
-            };
-
-            ServerConnection = new Connection()
-            {
-                InitialKeys = ServerInitialKeys,
-                ClientConnectionId = ClientId,
-                ServerConnectionId = ServerId,
-                HandshakeKeys = ServerHandshakeKeys,
-                ApplicationKeys = ServerApplicationKeys[0]
-            };
         }
 
         private byte[] LoadBinFile(int setNum, string filename)

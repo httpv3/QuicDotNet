@@ -12,10 +12,7 @@ namespace HTTPv3.Quic.Messages.Common
         {
             var set = MessageSets.Set1;
 
-            Connection conn = new Connection()
-            {
-                InitialKeys = set.ServerInitialKeys
-            };
+            Connection conn = set.ServerConnection;
 
             var file = set[1];
             var packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);

@@ -17,6 +17,8 @@ namespace HTTPv3.Quic.Messages.Extensions
         public const int NamedGroupLength_NumBytes = 2;
         public const int StatelessResetToken_NumBytes = 16;
 
+        public static readonly TransportParameters Default = new TransportParameters();
+
         public VersionTypes InitialVersion;
         public VersionTypes NegotiatedVersion;
         public List<VersionTypes> SupportedVersions = new List<VersionTypes>();
@@ -67,25 +69,32 @@ namespace HTTPv3.Quic.Messages.Extensions
         public bool DisableMigration = false;
         public PreferredAddress PreferredAddress;
 
-        public TransportParameters(ReadOnlySpan<byte> data, HandshakeType handshakeType) : base(ExtensionType.QuicTransportParameters)
+        public TransportParameters() : base(ExtensionType.QuicTransportParameters)
         {
+
+        }
+
+        public static TransportParameters Parse(ReadOnlySpan<byte> data, HandshakeType handshakeType)
+        {
+            TransportParameters ret = new TransportParameters();
+
             // Backwards compatibility for Version 18
             if (handshakeType == HandshakeType.ClientHello)
             {
                 data = data.ReadNextBytes(4, out ReadOnlySpan<byte> versionBytes);
-                InitialVersion = LongHeader.ParseVersionType(versionBytes);
+                ret.InitialVersion = LongHeader.ParseVersionType(versionBytes);
 
             }
             else if (handshakeType == HandshakeType.EncryptedExtensions)
             {
                 data = data.ReadNextBytes(4, out ReadOnlySpan<byte> negotiatedVersion)
                            .ReadNextTLSVariableLength(SupportedVersionsArrayLength_NumBytes, out var versionArrData);
-                NegotiatedVersion = LongHeader.ParseVersionType(negotiatedVersion);
+                ret.NegotiatedVersion = LongHeader.ParseVersionType(negotiatedVersion);
 
                 while (!versionArrData.IsEmpty)
                 {
                     versionArrData = versionArrData.ReadNextBytes(4, out ReadOnlySpan<byte> versionBytes);
-                    SupportedVersions.Add(LongHeader.ParseVersionType(versionBytes));
+                    ret.SupportedVersions.Add(LongHeader.ParseVersionType(versionBytes));
                 }
             }
 
@@ -94,8 +103,10 @@ namespace HTTPv3.Quic.Messages.Extensions
 
             while (!arrData.IsEmpty)
             {
-                ParseParameter(ref arrData);
+                ret.ParseParameter(ref arrData);
             }
+
+            return ret;
         }
 
         private void ParseParameter(ref ReadOnlySpan<byte> data)
