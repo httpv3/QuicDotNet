@@ -25,9 +25,9 @@ namespace HTTPv3.Quic.TLS.Messages
         List<ProtocolVersion> SupportedVersions = new List<ProtocolVersion>();
         List<NamedGroup> SupportedGroups = new List<NamedGroup>();
         List<SignatureScheme> SignatureAlgorithms = new List<SignatureScheme>();
-        KeyShareClientHello KeyShareClientHello;
-        PskKeyExchangeModes PskKeyExchangeModes;
-        ApplicationLayerProtocolNegotiation ApplicationLayerProtocolNegotiation;
+        List<KeyShare> KeyShares;
+        List<PskKeyExchangeMode> PskKeyExchangeModes;
+        List<byte[]> ApplicationLayerProtocolNegotiation;
         TransportParameters TransportParameters;
 
         public ClientHello() : base(HandshakeType.ClientHello)
@@ -76,13 +76,13 @@ namespace HTTPv3.Quic.TLS.Messages
                     SignatureAlgorithms = Extensions.SignatureAlgorithms.Parse(extBytes);
                     break;
                 case ExtensionType.KeyShare:
-                    KeyShareClientHello = new KeyShareClientHello(extBytes);
+                    KeyShares = KeyShare.ParseArray(extBytes);
                     break;
                 case ExtensionType.PskKeyExchangeModes:
-                    PskKeyExchangeModes = new PskKeyExchangeModes(extBytes);
+                    PskKeyExchangeModes = Extensions.PskKeyExchangeModes.Parse(extBytes);
                     break;
                 case ExtensionType.ApplicationLayerProtocolNegotiation:
-                    ApplicationLayerProtocolNegotiation = new ApplicationLayerProtocolNegotiation(extBytes);
+                    ApplicationLayerProtocolNegotiation = Extensions.ApplicationLayerProtocolNegotiation.Parse(extBytes);
                     break;
                 case ExtensionType.QuicTransportParameters:
                     TransportParameters = TransportParameters.Parse(extBytes, HandshakeType.ClientHello);

@@ -33,11 +33,11 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
                 case ExtensionType.SignatureAlgorithms:
                     return null; // SignatureAlgorithms(extBytes);
                 case ExtensionType.KeyShare:
-                    return new KeyShareServerHello(extBytes);
+                    return null; // KeyShare.ParseOne(ref extBytes);
                 case ExtensionType.PskKeyExchangeModes:
-                    return new PskKeyExchangeModes(extBytes);
+                    return null; // PskKeyExchangeModes.Parse(extBytes);
                 case ExtensionType.ApplicationLayerProtocolNegotiation:
-                    return new ApplicationLayerProtocolNegotiation(extBytes);
+                    return null; // ApplicationLayerProtocolNegotiation.Parse(extBytes);
                 case ExtensionType.QuicTransportParameters:
                     return TransportParameters.Parse(extBytes, HandshakeType.EncryptedExtensions);
                 default:
