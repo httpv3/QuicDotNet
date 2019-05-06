@@ -2,6 +2,8 @@
 {
     public enum NamedGroup : ushort
     {
+        NA = 0x0,
+
         /* Elliptic Curve Groups  = ECDHE) */
         secp256r1 = 0x0017,
         secp384r1 = 0x0018,

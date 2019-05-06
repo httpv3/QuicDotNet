@@ -21,7 +21,7 @@ namespace HTTPv3.Quic.Messages.Client
 
             Span<byte> afterHeader = packet.Bytes.Slice(packet.LongHeader.HeaderBytes.Length);
 
-            StartOfPacketNumber = afterHeader.ReadNextVariableInt(out PayloadAndPacketNumberLength);
+            StartOfPacketNumber = afterHeader.ReadVariableInt(out PayloadAndPacketNumberLength);
 
             PacketNumLength = 0;
             PayloadLength = 0;
@@ -34,10 +34,10 @@ namespace HTTPv3.Quic.Messages.Client
             for (int i = 0, j = 1; i < PacketNumLength; i++, j++)
                 StartOfPacketNumber[i] ^= p.HeaderProtectionMask[j];
 
-            var startOfPayload = StartOfPacketNumber.ReadNextNumber(PacketNumLength, out p.PacketNumber);
+            var startOfPayload = StartOfPacketNumber.ReadNumber(PacketNumLength, out p.PacketNumber);
             p.HeaderBytes = p.Bytes.Slice(0, p.Bytes.Length - startOfPayload.Length);
             PayloadLength = PayloadAndPacketNumberLength - PacketNumLength;
-            p.Bytes = startOfPayload.ReadNextBytes(PayloadLength, out p.EncryptedPayload);
+            p.Bytes = startOfPayload.ReadBytes(PayloadLength, out p.EncryptedPayload);
         }
 
 

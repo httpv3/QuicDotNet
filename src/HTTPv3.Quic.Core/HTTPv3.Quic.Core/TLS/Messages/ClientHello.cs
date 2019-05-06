@@ -1,5 +1,6 @@
 ﻿using HTTPv3.Quic.Messages.Extensions;
 using HTTPv3.Quic.TLS.Messages.Extensions;
+using Org.BouncyCastle.Security;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -18,12 +19,14 @@ namespace HTTPv3.Quic.TLS.Messages
         public const int LegacyCompressionMethods_NumBytes = 2;
         public const int ExtensionsLength_NumBytes = 2;
 
-        public uint ProtocolVersion;
+        private static SecureRandom prng = new SecureRandom();
+
         public byte[] Random;
 
+        CipherSuites CipherSuites = new CipherSuites();
         string ServerName;
         List<ProtocolVersion> SupportedVersions = new List<ProtocolVersion>();
-        List<NamedGroup> SupportedGroups = new List<NamedGroup>();
+        SupportedGroups SupportedGroups = new SupportedGroups();
         List<SignatureScheme> SignatureAlgorithms = new List<SignatureScheme>();
         List<KeyShare> KeyShares;
         List<PskKeyExchangeMode> PskKeyExchangeModes;
@@ -39,11 +42,13 @@ namespace HTTPv3.Quic.TLS.Messages
         {
             ClientHello ret = new ClientHello();
 
-            data = data.ReadNextNumber(ProtocolVersion_NumBytes, out ret.ProtocolVersion)
+            data = data.ReadNextBytes(ProtocolVersion_NumBytes, out ReadOnlySpan<byte> protocolVersion)
                        .ReadNextBytes(Random_NumBytes, out ret.Random)
-                       .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out var legacySessionId)
-                       .ReadNextTLSVariableLength(CipherSuitesLength_NumBytes, out var cipherSuiteBytes)
-                       .ReadNextBytes(LegacyCompressionMethods_NumBytes, out ReadOnlySpan<byte> legacyCompressionMethods)
+                       .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out var legacySessionId);
+
+            data = ret.CipherSuites.Parse(data);
+
+            data = data.ReadNextBytes(LegacyCompressionMethods_NumBytes, out ReadOnlySpan<byte> legacyCompressionMethods)
                        .ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out var extensionBytes);
 
             while (!extensionBytes.IsEmpty)
@@ -70,7 +75,7 @@ namespace HTTPv3.Quic.TLS.Messages
                     SupportedVersions = Extensions.SupportedVersions.ParseClientHello(extBytes);
                     break;
                 case ExtensionType.SupportedGroups:
-                    SupportedGroups = Extensions.SupportedGroups.Parse(extBytes);
+                    SupportedGroups.Parse(extBytes);
                     break;
                 case ExtensionType.SignatureAlgorithms:
                     SignatureAlgorithms = Extensions.SignatureAlgorithms.Parse(extBytes);
@@ -92,9 +97,30 @@ namespace HTTPv3.Quic.TLS.Messages
             }
         }
 
-        public void Write()
+        public Span<byte> Write(Span<byte> data)
         {
+            data = data.Write((ushort)ProtocolVersion.TLSv1_2)     // legacy_version 
+                       .Write(SecureRandom.GetNextBytes(prng, 32)) // random
+                       .WriteTLSVariableLength(LegacySessionIdLength_NumBytes, SecureRandom.GetNextBytes(prng, 32)); // legacy_session_id
 
+            data = CipherSuites.Write(data)                        // cipher_suites
+                        .Write(0x0);                               // legacy_compression_methods
+
+            var extLengthLoc = data;
+            var startOfExt = data = data.Slice(ExtensionsLength_NumBytes);
+
+            //if (!string.IsNullOrWhiteSpace(ServerName))
+            //    data = WriteExtension(data);
+
+            var extLength = startOfExt.Length - data.Length;
+            extLengthLoc.Write((ulong)extLength, ExtensionsLength_NumBytes);
+
+            return data;
+        }
+
+        private Span<byte> WriteExtension(Span<byte> data)
+        {
+            throw new NotImplementedException();
         }
     }
 }

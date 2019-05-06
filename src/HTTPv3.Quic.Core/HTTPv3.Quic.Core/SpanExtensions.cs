@@ -8,7 +8,7 @@ namespace HTTPv3.Quic
 {
     public static class SpanExtensions
     {
-        public static Span<byte> ReadNextByte(this Span<byte> bytesIn, out byte byteToRead)
+        public static Span<byte> ReadByte(this Span<byte> bytesIn, out byte byteToRead)
         {
             if (bytesIn.Length < 1) throw new NotEnoughBytesException($"Expecting 1 bytes but only have {bytesIn.Length} bytes left.");
 
@@ -17,7 +17,7 @@ namespace HTTPv3.Quic
             return bytesIn.Slice(1);
         }
 
-        public static Span<byte> ReadNextBytes(this Span<byte> bytesIn, int numBytes, out Span<byte> bytesToRead)
+        public static Span<byte> ReadBytes(this Span<byte> bytesIn, int numBytes, out Span<byte> bytesToRead)
         {
             if (bytesIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bytesIn.Length} bytes left.");
 
@@ -26,7 +26,7 @@ namespace HTTPv3.Quic
             return bytesIn.Slice(numBytes);
         }
 
-        public static Span<byte> ReadNextNumber(this Span<byte> bytesIn, int numBytes, out uint value)
+        public static Span<byte> ReadNumber(this Span<byte> bytesIn, int numBytes, out uint value)
         {
             if (bytesIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bytesIn.Length} bytes left.");
 
@@ -35,7 +35,7 @@ namespace HTTPv3.Quic
             return bytesIn.Slice(numBytes);
         }
 
-        public static Span<byte> ReadNextVariableInt(this Span<byte> bytesIn, out int value)
+        public static Span<byte> ReadVariableInt(this Span<byte> bytesIn, out int value)
         {
             int bytesUsed;
 
@@ -44,7 +44,7 @@ namespace HTTPv3.Quic
             return bytesIn.Slice(bytesUsed);
         }
 
-        public static Span<byte> ReadNextVariableInt(this Span<byte> bytesIn, out ulong value)
+        public static Span<byte> ReadVariableInt(this Span<byte> bytesIn, out ulong value)
         {
             int bytesUsed;
 
@@ -82,68 +82,48 @@ namespace HTTPv3.Quic
             }
         }
 
-        public static Span<byte> WriteNextByte(this Span<byte> bufferIn, byte value)
+        public static Span<byte> Write(this Span<byte> buffer, byte value)
         {
             const int numBytes = 1;
 
-            if (bufferIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bufferIn.Length} bytes left.");
+            if (buffer.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {buffer.Length} bytes left.");
 
-            bufferIn[0] = value;
+            buffer[0] = value;
 
-            return bufferIn.Slice(numBytes);
+            return buffer.Slice(numBytes);
         }
 
-        public static Span<byte> WriteNextBytes(this Span<byte> bufferIn, Span<byte> bytesIn)
+        public static Span<byte> Write(this Span<byte> buffer, Span<byte> bytesIn)
         {
-            if (bufferIn.Length < bytesIn.Length) throw new NotEnoughBytesException($"Expecting {bytesIn.Length} bytes but only have {bufferIn.Length} bytes left.");
+            if (buffer.Length < bytesIn.Length) throw new NotEnoughBytesException($"Expecting {bytesIn.Length} bytes but only have {buffer.Length} bytes left.");
 
-            bytesIn.CopyTo(bufferIn);
+            bytesIn.CopyTo(buffer);
 
-            return bufferIn.Slice(bytesIn.Length);
+            return buffer.Slice(bytesIn.Length);
         }
 
-        public static Span<byte> WriteNextNumber(this Span<byte> bufferIn, ushort value)
+        public static Span<byte> Write(this Span<byte> buffer, ushort value) { return buffer.Write(value, 2); }
+
+        public static Span<byte> Write(this Span<byte> buffer, uint value) { return buffer.Write(value, 4); }
+
+        public static Span<byte> Write(this Span<byte> buffer, ulong value) { return buffer.Write(value, 8); }
+
+        public static Span<byte> Write(this Span<byte> buffer, ulong value, int lengthNumBytes)
         {
-            const int numBytes = 2;
+            if (buffer.Length < lengthNumBytes) throw new NotEnoughBytesException($"Expecting {lengthNumBytes} bytes but only have {buffer.Length} bytes left.");
 
-            if (bufferIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bufferIn.Length} bytes left.");
+            for (int i = lengthNumBytes - 1; i >= 0; i--, value >>= 8)
+                buffer[i] = (byte)(value & 0xFF);
 
-            bufferIn[1] = (byte)(value & 0xFF);
-            bufferIn[0] = (byte)((value >>= 8) & 0xFF);
-
-            return bufferIn.Slice(numBytes);
+            return buffer.Slice(lengthNumBytes);
         }
 
-        public static Span<byte> WriteNextNumber(this Span<byte> bufferIn, uint value)
+        public static Span<byte> WriteTLSVariableLength(this in Span<byte> buffer, int lengthNumBytes, in Span<byte> bytesToWrite)
         {
-            const int numBytes = 4;
+            if (buffer.Length < lengthNumBytes + bytesToWrite.Length) throw new NotEnoughBytesException($"Expecting {lengthNumBytes + bytesToWrite.Length} bytes but only have {buffer.Length} bytes left.");
 
-            if (bufferIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bufferIn.Length} bytes left.");
-
-            bufferIn[3] = (byte)(value & 0xFF);
-            bufferIn[2] = (byte)((value >>= 8) & 0xFF);
-            bufferIn[1] = (byte)((value >>= 8) & 0xFF);
-            bufferIn[0] = (byte)((value >>= 8) & 0xFF);
-
-            return bufferIn.Slice(numBytes);
-        }
-
-        public static Span<byte> WriteNextNumber(this Span<byte> bufferIn, ulong value)
-        {
-            const int numBytes = 8;
-
-            if (bufferIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bufferIn.Length} bytes left.");
-
-            bufferIn[7] = (byte)(value & 0xFF);
-            bufferIn[6] = (byte)((value >>= 8) & 0xFF);
-            bufferIn[5] = (byte)((value >>= 8) & 0xFF);
-            bufferIn[4] = (byte)((value >>= 8) & 0xFF);
-            bufferIn[3] = (byte)((value >>= 8) & 0xFF);
-            bufferIn[2] = (byte)((value >>= 8) & 0xFF);
-            bufferIn[1] = (byte)((value >>= 8) & 0xFF);
-            bufferIn[0] = (byte)((value >>= 8) & 0xFF);
-
-            return bufferIn.Slice(numBytes);
+            return buffer.Write((ulong)bytesToWrite.Length, lengthNumBytes)
+                         .Write(bytesToWrite);
         }
     }
 }

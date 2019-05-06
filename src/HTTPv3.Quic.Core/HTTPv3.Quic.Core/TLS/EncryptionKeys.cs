@@ -119,8 +119,8 @@ namespace HTTPv3.Quic.TLS
         {
             var info = new byte[label.Length + 4];
             var span = info.AsSpan();
-            span = span.WriteNextNumber(length)
-                       .WriteNextByte((byte)label.Length);
+            span = span.Write(length)
+                       .Write((byte)label.Length);
             label.CopyTo(span);
 
             return hkdf.Expand(secret, length, info);

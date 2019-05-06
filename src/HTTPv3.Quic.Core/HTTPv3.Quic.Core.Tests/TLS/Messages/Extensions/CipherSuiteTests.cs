@@ -17,54 +17,58 @@ namespace HTTPv3.Quic.TLS
         public void HappyDecodeTest()
         {
             var expected = new CipherSuites();
-            expected.Versions.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
-            expected.Versions.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
-            expected.Versions.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
+            expected.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
+            expected.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
+            expected.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
             var data = "0006.1302.1301.1303".ToByteArrayFromHex();
 
-            var c = new CipherSuites(data);
+            var c = new CipherSuites();
+            c.Parse(data);
 
-            Assert.IsTrue(expected.Versions.SequenceEqual(c.Versions));
+            Assert.IsTrue(expected.SequenceEqual(c));
         }
 
         [TestMethod]
         public void NaDecodeTest()
         {
             var expected = new CipherSuites();
-            expected.Versions.Add(CipherSuite.NA);
-            expected.Versions.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
-            expected.Versions.Add(CipherSuite.NA);
-            expected.Versions.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
-            expected.Versions.Add(CipherSuite.NA);
-            expected.Versions.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
-            expected.Versions.Add(CipherSuite.NA);
-            expected.Versions.Add(CipherSuite.NA);
+            expected.Add(CipherSuite.NA);
+            expected.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
+            expected.Add(CipherSuite.NA);
+            expected.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
+            expected.Add(CipherSuite.NA);
+            expected.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
+            expected.Add(CipherSuite.NA);
+            expected.Add(CipherSuite.NA);
             var data = "0010.0000.1302.FFFF.1301.0F0F.1303.1234.4321".ToByteArrayFromHex();
 
-            var c = new CipherSuites(data);
+            var c = new CipherSuites();
+            c.Parse(data);
 
-            Assert.IsTrue(expected.Versions.SequenceEqual(c.Versions));
+            Assert.IsTrue(expected.SequenceEqual(c));
         }
 
         [TestMethod]
         public void BufferUnderrunDecodeTest()
         {
+            var cs = new CipherSuites();
+
             var data = "0007.1302.1301.1303".ToByteArrayFromHex();
 
-            Assert.ThrowsException<NotEnoughBytesException>(() => new CipherSuites(data));
+            Assert.ThrowsException<NotEnoughBytesException>(() => cs.Parse(data));
         }
 
         [TestMethod]
-        public void HappyEncodeTest()
+        public void HappyWriteTest()
         {
-            var input = new CipherSuites();
-            input.Versions.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
-            input.Versions.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
-            input.Versions.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
+            var cs = new CipherSuites();
+            cs.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
+            cs.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
+            cs.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
             var expected = "0006.1302.1301.1303".ToByteArrayFromHex();
 
             var buffer = new byte[2000];
-            var afterEncode = input.Encode(buffer);
+            var afterEncode = cs.Write(buffer);
             var bytesUsed = buffer.Length - afterEncode.Length;
 
             var result = buffer.AsSpan(0, bytesUsed).ToArray();
@@ -75,13 +79,13 @@ namespace HTTPv3.Quic.TLS
 
 
         [TestMethod]
-        public void EmptyEncodeTest()
+        public void EmptyWriteTest()
         {
             var input = new CipherSuites();
             var expected = "0000".ToByteArrayFromHex();
 
             var buffer = new byte[2000];
-            var afterEncode = input.Encode(buffer);
+            var afterEncode = input.Write(buffer);
             var bytesUsed = buffer.Length - afterEncode.Length;
 
             var result = buffer.AsSpan(0, bytesUsed).ToArray();
@@ -91,20 +95,20 @@ namespace HTTPv3.Quic.TLS
         }
 
         [TestMethod]
-        public void IgnoreNaEncodeTest()
+        public void IgnoreNaWriteTest()
         {
             var input = new CipherSuites();
-            input.Versions.Add(CipherSuite.NA);
-            input.Versions.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
-            input.Versions.Add(CipherSuite.NA);
-            input.Versions.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
-            input.Versions.Add(CipherSuite.NA);
-            input.Versions.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
-            input.Versions.Add(CipherSuite.NA);
+            input.Add(CipherSuite.NA);
+            input.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
+            input.Add(CipherSuite.NA);
+            input.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
+            input.Add(CipherSuite.NA);
+            input.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
+            input.Add(CipherSuite.NA);
             var expected = "0006.1302.1301.1303".ToByteArrayFromHex();
 
             var buffer = new byte[2000];
-            var afterEncode = input.Encode(buffer);
+            var afterEncode = input.Write(buffer);
             var bytesUsed = buffer.Length - afterEncode.Length;
 
             var result = buffer.AsSpan(0, bytesUsed).ToArray();
@@ -116,14 +120,14 @@ namespace HTTPv3.Quic.TLS
         [TestMethod]
         public void BufferExactTest()
         {
-            var input = new CipherSuites();
-            input.Versions.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
-            input.Versions.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
-            input.Versions.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
+            var cs = new CipherSuites();
+            cs.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
+            cs.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
+            cs.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
             var expected = "0006.1302.1301.1303".ToByteArrayFromHex();
 
             var buffer = new byte[8];
-            var afterEncode = input.Encode(buffer);
+            var afterEncode = cs.Write(buffer);
             var bytesUsed = buffer.Length - afterEncode.Length;
 
             Assert.IsTrue(expected.SequenceEqual(buffer));
@@ -134,24 +138,24 @@ namespace HTTPv3.Quic.TLS
         [TestMethod]
         public void BufferUnderrunTest()
         {
-            var input = new CipherSuites();
-            input.Versions.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
-            input.Versions.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
-            input.Versions.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
+            var cs = new CipherSuites();
+            cs.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
+            cs.Add(CipherSuite.TLS_AES_128_GCM_SHA256);
+            cs.Add(CipherSuite.TLS_CHACHA20_POLY1305_SHA256);
 
             var buffer = new byte[7];
-            Assert.ThrowsException<NotEnoughBytesException>(() => input.Encode(buffer));
+            Assert.ThrowsException<NotEnoughBytesException>(() => cs.Write(buffer));
         }
 
         [TestMethod]
         public void TestParse()
         {
-            Assert.AreEqual(CipherSuite.NA, CipherSuites.ParseCipherSuite(0x0000));
-            Assert.AreEqual(CipherSuite.NA, CipherSuites.ParseCipherSuite(0x1300));
-            Assert.AreEqual(CipherSuite.TLS_AES_128_GCM_SHA256, CipherSuites.ParseCipherSuite(0x1301));
-            Assert.AreEqual(CipherSuite.TLS_AES_256_GCM_SHA384, CipherSuites.ParseCipherSuite(0x1302));
-            Assert.AreEqual(CipherSuite.TLS_CHACHA20_POLY1305_SHA256, CipherSuites.ParseCipherSuite(0x1303));
-            Assert.AreEqual(CipherSuite.NA, CipherSuites.ParseCipherSuite(0xFFFF));
+            Assert.AreEqual(CipherSuite.NA, CipherSuites.ParseValue(0x0000));
+            Assert.AreEqual(CipherSuite.NA, CipherSuites.ParseValue(0x1300));
+            Assert.AreEqual(CipherSuite.TLS_AES_128_GCM_SHA256, CipherSuites.ParseValue(0x1301));
+            Assert.AreEqual(CipherSuite.TLS_AES_256_GCM_SHA384, CipherSuites.ParseValue(0x1302));
+            Assert.AreEqual(CipherSuite.TLS_CHACHA20_POLY1305_SHA256, CipherSuites.ParseValue(0x1303));
+            Assert.AreEqual(CipherSuite.NA, CipherSuites.ParseValue(0xFFFF));
         }
     }
 }

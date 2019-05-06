@@ -41,7 +41,7 @@ namespace HTTPv3.Quic.Messages.Common
             for (int i = 0, j = 1; i < packetNumLength; i++, j++)
                 StartOfPacketNumber[i] ^= p.HeaderProtectionMask[j];
 
-            var startOfPayload = StartOfPacketNumber.ReadNextNumber(packetNumLength, out p.PacketNumber);
+            var startOfPayload = StartOfPacketNumber.ReadNumber(packetNumLength, out p.PacketNumber);
             p.HeaderBytes = p.Bytes.Slice(0, p.Bytes.Length - startOfPayload.Length);
             p.EncryptedPayload = startOfPayload;
             p.Bytes = Span<byte>.Empty;
