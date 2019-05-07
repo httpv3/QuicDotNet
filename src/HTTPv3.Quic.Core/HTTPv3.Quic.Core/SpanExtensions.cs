@@ -108,6 +108,8 @@ namespace HTTPv3.Quic
 
         public static Span<byte> Write(this Span<byte> buffer, ulong value) { return buffer.Write(value, 8); }
 
+        public static Span<byte> Write(this Span<byte> buffer, long value, int lengthNumBytes) { return buffer.Write((ulong)value, lengthNumBytes); }
+
         public static Span<byte> Write(this Span<byte> buffer, ulong value, int lengthNumBytes)
         {
             if (buffer.Length < lengthNumBytes) throw new NotEnoughBytesException($"Expecting {lengthNumBytes} bytes but only have {buffer.Length} bytes left.");

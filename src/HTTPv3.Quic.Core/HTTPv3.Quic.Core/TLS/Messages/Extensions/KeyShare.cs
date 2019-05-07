@@ -1,44 +1,63 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
     internal class KeyShare
     {
-        public const int ArrayLength_NumBytes = 2;
-        public const int KeyShareLength_NumBytes = 2;
-
         public NamedGroup Group;
         public byte[] KeyExchange;
+    }
 
-        public static List<KeyShare> ParseArray(ReadOnlySpan<byte> data)
+    internal static class KeyShareExtensions
+    {
+        public const int ArrayLength_NumBytes = 2;
+        public const int Length_NumBytes = 2;
+
+        public static ReadOnlySpan<byte> Read(this ReadOnlySpan<byte> bytesIn, out KeyShare namedGroup)
         {
-            List<KeyShare> ret = new List<KeyShare>();
+            namedGroup = new KeyShare();
 
-            data.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+            var ret = bytesIn.Read(out namedGroup.Group)
+                          .ReadNextTLSVariableLength(Length_NumBytes, out var keyData);
+
+            namedGroup.KeyExchange = keyData.ToArray();
+
+            return ret;
+        }
+
+        public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, in List<KeyShare> list)
+        {
+            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
 
             while (!arrData.IsEmpty)
             {
-                ret.Add(ParseOne(ref arrData));
+                arrData = arrData.Read(out KeyShare ks);
+                list.Add(ks);
             }
 
             return ret;
         }
 
-        public static KeyShare ParseOne(ref ReadOnlySpan<byte> data)
+        public static Span<byte> Write(this Span<byte> buffer, KeyShare ks)
         {
-            KeyShare ret = new KeyShare();
+            return buffer.Write(ks.Group)
+                         .WriteTLSVariableLength(Length_NumBytes, ks.KeyExchange);
+        }
 
-            data = data.ReadNextNumber(SupportedGroups.NamedGroupLength_NumBytes, out var groupVal)
-                       .ReadNextTLSVariableLength(KeyShareLength_NumBytes, out var keyData);
+        public static Span<byte> Write(this in Span<byte> buffer, in List<KeyShare> list)
+        {
+            var arrDataStart = buffer.Slice(ArrayLength_NumBytes);
+            var arrDataCurrent = arrDataStart;
 
-            if (Enum.IsDefined(typeof(NamedGroup), (ushort)groupVal))
-                ret.Group = (NamedGroup)Enum.ToObject(typeof(NamedGroup), (ushort)groupVal);
+            foreach (var ks in list)
+                arrDataCurrent = arrDataCurrent.Write(ks);
 
-            ret.KeyExchange = keyData.ToArray();
+            int arrLen = arrDataStart.Length - arrDataCurrent.Length;
 
-            return ret;
+            buffer.Write(arrLen, ArrayLength_NumBytes);
+
+            return arrDataCurrent;
         }
     }
 }

@@ -15,11 +15,11 @@ namespace HTTPv3.Quic.Messages.Frames
 
         public ConnectionCloseAppFrame(ref Packet p)
         {
-            p.PayloadCursor = p.PayloadCursor.ReadNextNumber(ErrorCode_NumBytes, out uint errorCodeNum)
+            p.PayloadCursor = p.PayloadCursor.Read(ErrorCode_NumBytes, out ushort errorCodeNum)
                                              .ReadNextVariableInt(out int reasonLength)
-                                             .ReadNextBytes(reasonLength, out byte[] reasonBytes);
+                                             .Read(reasonLength, out byte[] reasonBytes);
 
-            ErrorCode = ParseErrorCode((ushort)errorCodeNum);
+            ErrorCode = ParseErrorCode(errorCodeNum);
             Reason = Encoding.UTF8.GetString(reasonBytes);
         }
 

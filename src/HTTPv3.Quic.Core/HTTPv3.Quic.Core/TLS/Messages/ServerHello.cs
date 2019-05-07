@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HTTPv3.Quic.TLS.Messages.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -16,22 +17,22 @@ namespace HTTPv3.Quic.TLS.Messages
         public const int LegacyCompressionMethod_NumBytes = 1;
         public const int ExtensionsLength_NumBytes = 2;
 
-        public uint ProtocolVersion;
+        public ushort ProtocolVersion;
         public byte[] Random;
-        public List<Extensions.Extension> ExtensionList = new List<Extensions.Extension>();
 
         public ServerHello(ReadOnlySpan<byte> data) : base(HandshakeType.ServerHello)
         {
-            data = data.ReadNextNumber(ProtocolVersion_NumBytes, out ProtocolVersion)
-                       .ReadNextBytes(Random_NumBytes, out Random)
+            data = data.Read(ProtocolVersion_NumBytes, out ProtocolVersion)
+                       .Read(Random_NumBytes, out Random)
                        .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out var legacySessionId)
-                       .ReadNextNumber(CipherSuite_NumBytes, out var cipherSuiteNum)
-                       .ReadNextBytes(LegacyCompressionMethod_NumBytes, out ReadOnlySpan<byte> legacyCompressionMethod)
+                       .Read(CipherSuite_NumBytes, out ushort cipherSuiteNum)
+                       .Read(LegacyCompressionMethod_NumBytes, out ReadOnlySpan<byte> legacyCompressionMethod)
                        .ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out var extensionBytes);
 
             while (!extensionBytes.IsEmpty)
             {
-                ExtensionList.Add(Extensions.Extension.ParseServerHello(ref extensionBytes));
+                extensionBytes = extensionBytes.Read(out ExtensionType type)
+                                               .ReadNextTLSVariableLength(Extension.Length_NumBytes, out var extBytes);
             }
         }
     }

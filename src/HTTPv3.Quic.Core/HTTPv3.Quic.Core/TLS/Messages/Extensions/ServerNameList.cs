@@ -16,7 +16,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
             while(!arrData.IsEmpty)
             {
-                arrData = arrData.ReadNextByte(out var type)
+                arrData = arrData.Read(out byte type)
                                  .ReadNextTLSVariableLength(NameLength_NumBytes, out var name);
 
                 if (type == HostNameType)

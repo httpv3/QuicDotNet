@@ -17,9 +17,9 @@ namespace HTTPv3.Quic.Messages.Frames
         public NewConnectionIdFrame(ref Packet p)
         {
             p.PayloadCursor = p.PayloadCursor.ReadNextVariableInt(out Sequence)
-                                             .ReadNextByte(out byte length)
-                                             .ReadNextBytes(length, out byte[] idBytes)
-                                             .ReadNextBytes(ResetToken_NumBytes, out ResetToken);
+                                             .Read(out byte length)
+                                             .Read(length, out byte[] idBytes)
+                                             .Read(ResetToken_NumBytes, out ResetToken);
 
             Id = new ConnectionId(idBytes);
         }

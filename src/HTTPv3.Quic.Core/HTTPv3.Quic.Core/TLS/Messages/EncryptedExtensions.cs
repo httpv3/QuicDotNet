@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HTTPv3.Quic.TLS.Messages.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -18,7 +19,6 @@ namespace HTTPv3.Quic.TLS.Messages
 
         public uint ProtocolVersion;
         public byte[] Random;
-        public List<Extensions.Extension> ExtensionList = new List<Extensions.Extension>();
 
         public EncryptedExtensions(ReadOnlySpan<byte> data) : base(HandshakeType.EncryptedExtensions)
         {
@@ -26,7 +26,8 @@ namespace HTTPv3.Quic.TLS.Messages
 
             while (!extensionBytes.IsEmpty)
             {
-                ExtensionList.Add(Extensions.Extension.ParseServerHello(ref extensionBytes));
+                extensionBytes = extensionBytes.Read(out ExtensionType type)
+                                               .ReadNextTLSVariableLength(Extension.Length_NumBytes, out var extBytes);
             }
         }
     }

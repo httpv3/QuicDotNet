@@ -16,7 +16,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
             while(!arrData.IsEmpty)
             {
-                arrData = arrData.ReadNextByte(out var val);
+                arrData = arrData.Read(out byte val);
 
                 if (Enum.IsDefined(typeof(PskKeyExchangeMode), val))
                     ret.Add((PskKeyExchangeMode)Enum.ToObject(typeof(PskKeyExchangeMode), val));

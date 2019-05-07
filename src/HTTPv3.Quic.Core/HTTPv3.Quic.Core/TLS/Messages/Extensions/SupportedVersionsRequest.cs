@@ -4,10 +4,9 @@ using System.Text;
 
 namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
-    internal class SignatureAlgorithms : List<SignatureScheme>
+    internal class SupportedVersionsRequest : List<ProtocolVersion>
     {
-        public const int ArrayLength_NumBytes = 2;
-        public const int SignatureAlgorithmLength_NumBytes = 2;
+        public const int ArrayLength_NumBytes = 1;
 
         public ReadOnlySpan<byte> Parse(in ReadOnlySpan<byte> data)
         {
@@ -15,20 +14,12 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
             while (!arrData.IsEmpty)
             {
-                arrData = arrData.Read(SignatureAlgorithmLength_NumBytes, out ushort val);
+                arrData = arrData.Read(out ProtocolVersion pv);
 
-                Add(ParseValue(val));
+                Add(pv);
             }
 
             return ret;
-        }
-
-        public static SignatureScheme ParseValue(ushort value)
-        {
-            if (Enum.IsDefined(typeof(SignatureScheme), value))
-                return (SignatureScheme)value;
-
-            return SignatureScheme.NA;
         }
 
         public Span<byte> Write(in Span<byte> buffer)
@@ -39,9 +30,9 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
             var arrDataStart = lenStart.Slice(Extension.Length_NumBytes + ArrayLength_NumBytes);
             var arrDataCurrent = arrDataStart;
 
-            foreach (var scheme in this)
-                if (scheme != SignatureScheme.NA)
-                    arrDataCurrent = arrDataCurrent.Write((ushort)scheme, SignatureAlgorithmLength_NumBytes);
+            foreach (var version in this)
+                if (version != ProtocolVersion.NA)
+                    arrDataCurrent = arrDataCurrent.Write(version);
 
             int arrLen = arrDataStart.Length - arrDataCurrent.Length;
             int len = ArrayLength_NumBytes + arrLen;

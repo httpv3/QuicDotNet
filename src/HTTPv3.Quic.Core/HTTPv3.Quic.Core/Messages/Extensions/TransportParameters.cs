@@ -10,7 +10,7 @@ namespace HTTPv3.Quic.Messages.Extensions
     // IETF quic-transport draft-19
     // 18.1.  Transport Parameter Definitions
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-18.1
-    internal class TransportParameters : Extension
+    internal class TransportParameters
     {
         public const int ArrayLength_NumBytes = 2;
         public const int SupportedVersionsArrayLength_NumBytes = 1;
@@ -69,7 +69,7 @@ namespace HTTPv3.Quic.Messages.Extensions
         public bool DisableMigration = false;
         public PreferredAddress PreferredAddress;
 
-        public TransportParameters() : base(ExtensionType.QuicTransportParameters)
+        public TransportParameters()
         {
 
         }
@@ -81,19 +81,19 @@ namespace HTTPv3.Quic.Messages.Extensions
             // Backwards compatibility for Version 18
             if (handshakeType == HandshakeType.ClientHello)
             {
-                data = data.ReadNextBytes(4, out ReadOnlySpan<byte> versionBytes);
+                data = data.Read(4, out ReadOnlySpan<byte> versionBytes);
                 ret.InitialVersion = LongHeader.ParseVersionType(versionBytes);
 
             }
             else if (handshakeType == HandshakeType.EncryptedExtensions)
             {
-                data = data.ReadNextBytes(4, out ReadOnlySpan<byte> negotiatedVersion)
+                data = data.Read(4, out ReadOnlySpan<byte> negotiatedVersion)
                            .ReadNextTLSVariableLength(SupportedVersionsArrayLength_NumBytes, out var versionArrData);
                 ret.NegotiatedVersion = LongHeader.ParseVersionType(negotiatedVersion);
 
                 while (!versionArrData.IsEmpty)
                 {
-                    versionArrData = versionArrData.ReadNextBytes(4, out ReadOnlySpan<byte> versionBytes);
+                    versionArrData = versionArrData.Read(4, out ReadOnlySpan<byte> versionBytes);
                     ret.SupportedVersions.Add(LongHeader.ParseVersionType(versionBytes));
                 }
             }
@@ -111,8 +111,8 @@ namespace HTTPv3.Quic.Messages.Extensions
 
         private void ParseParameter(ref ReadOnlySpan<byte> data)
         {
-            data = data.ReadNextNumber(Type_NumBytes, out uint typeInt)
-                       .ReadNextTLSVariableLength(Length_NumBytes, out var extBytes);
+            data = data.Read(Extension.Type_NumBytes, out ushort typeInt)
+                       .ReadNextTLSVariableLength(Extension.Length_NumBytes, out var extBytes);
 
             TransportParameterId type = (TransportParameterId)typeInt;
 

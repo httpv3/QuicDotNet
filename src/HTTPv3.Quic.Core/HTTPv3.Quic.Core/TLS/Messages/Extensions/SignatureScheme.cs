@@ -6,6 +6,8 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
     public enum SignatureScheme : ushort
     {
+        NA = 0x0,
+
         /* RSASSA-PKCS1-v1_5 algorithms */
         rsa_pkcs1_sha256 = 0x0401,
         rsa_pkcs1_sha384 = 0x0501,

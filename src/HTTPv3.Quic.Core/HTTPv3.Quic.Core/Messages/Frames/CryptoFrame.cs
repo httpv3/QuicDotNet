@@ -14,7 +14,7 @@ namespace HTTPv3.Quic.Messages.Frames
         {
             p.PayloadCursor = p.PayloadCursor.ReadNextVariableInt(out int offset)
                                              .ReadNextVariableInt(out int length)
-                                             .ReadNextBytes(length, out ReadOnlySpan<byte> data);
+                                             .Read(length, out ReadOnlySpan<byte> data);
 
             while (!data.IsEmpty)
             {

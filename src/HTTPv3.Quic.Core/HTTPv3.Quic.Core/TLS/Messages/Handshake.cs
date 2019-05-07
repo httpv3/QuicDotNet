@@ -17,7 +17,7 @@ namespace HTTPv3.Quic.TLS.Messages
 
         public static Handshake Parse(ref ReadOnlySpan<byte> data)
         {
-            data = data.ReadNextByte(out byte typeByte)
+            data = data.Read(out byte typeByte)
                        .ReadNextTLSVariableLength(Length_NumBytes, out var extensionBytes);
 
             HandshakeType type = (HandshakeType)typeByte;

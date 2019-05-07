@@ -108,7 +108,7 @@ namespace HTTPv3.Quic.Messages.Common
             if (PayloadCursor == null || PayloadCursor.Length == 0)
                 return null;
 
-            PayloadCursor = PayloadCursor.ReadNextByte(out var frameByte);
+            PayloadCursor = PayloadCursor.Read(out var frameByte);
 
             var frameType = FrameTypes.Parse(frameByte);
 

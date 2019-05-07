@@ -26,15 +26,15 @@ namespace HTTPv3.Quic.Messages.Extensions
 
         public PreferredAddress(ReadOnlySpan<byte> bytes)
         {
-            bytes.ReadNextBytes(IPv4Address_NumBytes, out IPv4Address)
-                 .ReadNextNumber(Port_NumBytes, out var ipv4Port)
-                 .ReadNextBytes(IPv6Address_NumBytes, out IPv6Address)
-                 .ReadNextNumber(Port_NumBytes, out var ipv6Port)
+            bytes.Read(IPv4Address_NumBytes, out IPv4Address)
+                 .Read(Port_NumBytes, out ushort ipv4Port)
+                 .Read(IPv6Address_NumBytes, out IPv6Address)
+                 .Read(Port_NumBytes, out ushort ipv6Port)
                  .ReadNextTLSVariableLength(ConnectionIdLength_NumBytes, out var connBytes)
-                 .ReadNextBytes(StatelessResetToken_NumBytes, out StatelessResetToken);
+                 .Read(StatelessResetToken_NumBytes, out StatelessResetToken);
 
-            IPv4Port = (ushort)ipv4Port;
-            IPv6Port = (ushort)ipv6Port;
+            IPv4Port = ipv4Port;
+            IPv6Port = ipv6Port;
             ConnectionId = connBytes.Length == 0 ? null : new ConnectionId(connBytes.ToArray());
         }
     }

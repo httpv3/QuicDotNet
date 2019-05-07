@@ -8,7 +8,7 @@ namespace HTTPv3.Quic
 {
     public static class ReadOnlySpanExtensions
     {
-        public static ReadOnlySpan<byte> ReadNextByte(this ReadOnlySpan<byte> bytesIn, out byte byteOut)
+        public static ReadOnlySpan<byte> Read(this ReadOnlySpan<byte> bytesIn, out byte byteOut)
         {
             if (bytesIn.Length < 1) throw new NotEnoughBytesException($"Expecting 1 bytes but only have {bytesIn.Length} bytes left.");
 
@@ -17,7 +17,7 @@ namespace HTTPv3.Quic
             return bytesIn.Slice(1);
         }
 
-        public static ReadOnlySpan<byte> ReadNextBytes(this ReadOnlySpan<byte> bytesIn, int numBytes, out byte[] bytesOut)
+        public static ReadOnlySpan<byte> Read(this ReadOnlySpan<byte> bytesIn, int numBytes, out byte[] bytesOut)
         {
             if (bytesIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bytesIn.Length} bytes left.");
 
@@ -26,7 +26,7 @@ namespace HTTPv3.Quic
             return bytesIn.Slice(numBytes);
         }
 
-        public static ReadOnlySpan<byte> ReadNextBytes(this ReadOnlySpan<byte> bytesIn, int numBytes, out ReadOnlySpan<byte> bytesOut)
+        public static ReadOnlySpan<byte> Read(this ReadOnlySpan<byte> bytesIn, int numBytes, out ReadOnlySpan<byte> bytesOut)
         {
             if (bytesIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bytesIn.Length} bytes left.");
 
@@ -35,7 +35,16 @@ namespace HTTPv3.Quic
             return bytesIn.Slice(numBytes);
         }
 
-        public static ReadOnlySpan<byte> ReadNextNumber(this ReadOnlySpan<byte> bytesIn, int numBytes, out uint value)
+        public static ReadOnlySpan<byte> Read(this ReadOnlySpan<byte> bytesIn, int numBytes, out ushort value)
+        {
+            if (bytesIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bytesIn.Length} bytes left.");
+
+            value = bytesIn.Slice(0, numBytes).ToUInt16();
+
+            return bytesIn.Slice(numBytes);
+        }
+
+        public static ReadOnlySpan<byte> Read(this ReadOnlySpan<byte> bytesIn, int numBytes, out uint value)
         {
             if (bytesIn.Length < numBytes) throw new NotEnoughBytesException($"Expecting {numBytes} bytes but only have {bytesIn.Length} bytes left.");
 
@@ -48,10 +57,10 @@ namespace HTTPv3.Quic
         {
             if (bytesIn.Length < lengthNumBytes) throw new NotEnoughBytesException($"Expecting {lengthNumBytes} bytes but only have {bytesIn.Length} bytes left.");
 
-            bytesIn = bytesIn.ReadNextNumber(lengthNumBytes, out var length);
+            bytesIn = bytesIn.Read(lengthNumBytes, out uint length);
             if (bytesIn.Length < length) throw new NotEnoughBytesException($"Expecting {length} bytes but only have {bytesIn.Length} bytes left.");
 
-            return bytesIn.ReadNextBytes((int)length, out bytesOut);
+            return bytesIn.Read((int)length, out bytesOut);
         }
 
         public static ReadOnlySpan<byte> ReadNextVariableInt(this ReadOnlySpan<byte> bytesIn, out int value)
@@ -70,6 +79,35 @@ namespace HTTPv3.Quic
             VariableLengthInt.ReadOne(bytesIn, out value, out bytesUsed);
 
             return bytesIn.Slice(bytesUsed);
+        }
+
+        public static ushort ToUInt16(this ReadOnlySpan<byte> span, bool isNetworkByteOrder = true)
+        {
+            int len = span.Length;
+            if (len > 2) throw new ArithmeticException($"Cannot convert {len} bytes to UInt16");
+
+            ushort num = 0;
+
+            if (isNetworkByteOrder)
+            {
+                for (int i = 0; i < len; i++)
+                {
+                    num <<= 8;
+                    num |= span[i];
+                }
+
+                return num;
+            }
+            else
+            {
+                for (int i = len - 1; i >= 0; i--)
+                {
+                    num <<= 8;
+                    num |= span[i];
+                }
+
+                return num;
+            }
         }
 
         public static uint ToUInt32(this ReadOnlySpan<byte> span, bool isNetworkByteOrder = true)

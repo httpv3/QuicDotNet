@@ -1,4 +1,6 @@
-﻿namespace HTTPv3.Quic.TLS.Messages.Extensions
+﻿using System;
+
+namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
     public enum NamedGroup : ushort
     {
@@ -17,5 +19,32 @@
         ffdhe4096 = 0x0102,
         ffdhe6144 = 0x0103,
         ffdhe8192 = 0x0104,
+    }
+
+    internal static class NamedGroupExtensions
+    {
+        public const int Length_NumBytes = 2;
+
+        public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, out NamedGroup namedGroup)
+        {
+            var ret = bytesIn.Read(Length_NumBytes, out ushort val);
+
+            namedGroup = ParseValue(val);
+
+            return ret;
+        }
+
+        public static NamedGroup ParseValue(ushort value)
+        {
+            if (Enum.IsDefined(typeof(NamedGroup), value))
+                return (NamedGroup)value;
+
+            return NamedGroup.NA;
+        }
+
+        public static Span<byte> Write(this in Span<byte> buffer, NamedGroup value)
+        {
+            return buffer.Write((ushort)value, Length_NumBytes);
+        }
     }
 }

@@ -3,46 +3,75 @@ using System;
 
 namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
-    internal class Extension
+    internal static class Extension
     {
         public const int Type_NumBytes = 2;
         public const int Length_NumBytes = 2;
 
-        public ExtensionType ExtensionType;
-
-        public Extension(ExtensionType extensionType)
+        public static ExtensionWriter AddExtension(this in Span<byte> buffer, ExtensionType type)
         {
-            ExtensionType = extensionType;
+            var lengthStart = buffer.Write(type);
+            var start = lengthStart.Slice(Extension.Length_NumBytes);
+
+            return new ExtensionWriter()
+            {
+                LengthStart = lengthStart,
+                Start = start,
+                Current = start
+            };
         }
 
-        public static Extension ParseServerHello(ref ReadOnlySpan<byte> data)
+        public static ExtensionType ParseValue(ushort value)
         {
-            data = data.ReadNextNumber(Type_NumBytes, out uint typeInt)
-                       .ReadNextTLSVariableLength(Length_NumBytes, out var extBytes);
+            if (Enum.IsDefined(typeof(ExtensionType), value))
+                return (ExtensionType)value;
 
-            ExtensionType type = (ExtensionType)typeInt;
+            return ExtensionType.NA;
+        }
 
-            switch (type)
-            {
-                case ExtensionType.ServerName:
-                    return new ServerName(extBytes);
-                case ExtensionType.SupportedVersions:
-                    return new SupportedVersionsServerHello(extBytes);
-                case ExtensionType.SupportedGroups:
-                    return null; // new SupportedGroups(extBytes);
-                case ExtensionType.SignatureAlgorithms:
-                    return null; // SignatureAlgorithms(extBytes);
-                case ExtensionType.KeyShare:
-                    return null; // KeyShare.ParseOne(ref extBytes);
-                case ExtensionType.PskKeyExchangeModes:
-                    return null; // PskKeyExchangeModes.Parse(extBytes);
-                case ExtensionType.ApplicationLayerProtocolNegotiation:
-                    return null; // ApplicationLayerProtocolNegotiation.Parse(extBytes);
-                case ExtensionType.QuicTransportParameters:
-                    return TransportParameters.Parse(extBytes, HandshakeType.EncryptedExtensions);
-                default:
-                    return null;
-            }
+        public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, out ExtensionReader rdr)
+        {
+            rdr = new ExtensionReader();
+
+            var ret = bytesIn.Read(out rdr.Type)
+                       .ReadNextTLSVariableLength(Extension.Length_NumBytes, out rdr.Data);
+
+            return ret;
+        }
+
+        public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, out ExtensionType type)
+        {
+            var ret = bytesIn.Read(Extension.Type_NumBytes, out ushort val);
+
+            type = ParseValue(val);
+
+            return ret;
+        }
+
+        public static Span<byte> Write(this in Span<byte> buffer, ExtensionType cs)
+        {
+            return buffer.Write((ushort)cs, Extension.Type_NumBytes);
+        }
+    }
+
+    internal ref struct ExtensionReader
+    {
+        public ExtensionType Type;
+        public ReadOnlySpan<byte> Data;
+    }
+
+    internal ref struct ExtensionWriter
+    {
+        public Span<byte> LengthStart;
+        public Span<byte> Start;
+        public Span<byte> Current;
+
+        public Span<byte> Close()
+        {
+            int len = Current.Length - Start.Length;
+            LengthStart.Write(len, Extension.Length_NumBytes);
+
+            return Current;
         }
     }
 
@@ -71,5 +100,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
         SignatureAlgorithmsCert = 50,
         KeyShare = 51,
         QuicTransportParameters = 0xffa5,
+
+        NA = 0xff,
     }
 }
