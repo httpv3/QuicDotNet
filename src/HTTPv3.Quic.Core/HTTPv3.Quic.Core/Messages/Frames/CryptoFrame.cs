@@ -8,7 +8,7 @@ namespace HTTPv3.Quic.Messages.Frames
 {
     internal class CryptoFrame
     {
-        List<Handshake> HandshakeMessages = new List<Handshake>();
+        public List<Handshake> HandshakeMessages = new List<Handshake>();
 
         public CryptoFrame(ref Packet p)
         {

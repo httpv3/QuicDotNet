@@ -45,8 +45,10 @@ namespace HTTPv3.Quic.TLS.Messages
 
             data = data.Read(out ret.LegacyVersion)
                        .Read(Random_NumBytes, out ret.Random)
-                       .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out _)
+                       .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out var legacySessionId)
                        .Read(ret.CipherSuites);
+
+            ret.LegacySessionId = legacySessionId.ToArray();
 
             data = data.Read(LegacyCompressionMethods_NumBytes, out ReadOnlySpan<byte> _)
                        .ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out var extensionBytes);
@@ -182,21 +184,7 @@ namespace HTTPv3.Quic.TLS.Messages
                 });
             }
 
-            //if (!string.IsNullOrWhiteSpace(ServerName))
-            //    data = WriteExtension(data);
-
-
-            //data.WriteVector(CipherSuites, (x, y) => x.Write(y));
-
-            var extLength = startOfExt.Length - data.Length;
-            extLengthLoc.Write((ulong)extLength, ExtensionsLength_NumBytes);
-
             return data;
-        }
-
-        private Span<byte> WriteExtension(Span<byte> data)
-        {
-            throw new NotImplementedException();
         }
     }
 }
