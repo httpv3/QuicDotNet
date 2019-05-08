@@ -15,7 +15,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
     internal static class ProtocolVersionExtensions
     {
-        public const int ArrayLength_NumBytes = 2;
+        public const int ArrayLength_NumBytes = 1;
         public const int Length_NumBytes = 2;
 
         public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, out ProtocolVersion pv)
@@ -29,11 +29,11 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
         public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, in List<ProtocolVersion> list)
         {
-            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+            var ret = bytesIn.Read(out byte length);
 
-            while (!arrData.IsEmpty)
+            for (int i = 0; i < length; i += Length_NumBytes)
             {
-                arrData = arrData.Read(out ProtocolVersion pv);
+                ret = ret.Read(out ProtocolVersion pv);
                 list.Add(pv);
             }
 
@@ -55,18 +55,12 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
         public static Span<byte> Write(this in Span<byte> buffer, in List<ProtocolVersion> list)
         {
-            var arrDataStart = buffer.Slice(ArrayLength_NumBytes);
-            var arrDataCurrent = arrDataStart;
+            var cur = buffer.Write((byte)(list.Count * Length_NumBytes));
 
             foreach (var pv in list)
-                if (pv != ProtocolVersion.NA)
-                    arrDataCurrent = arrDataCurrent.Write(pv);
+                cur = cur.Write(pv);
 
-            int arrLen = arrDataStart.Length - arrDataCurrent.Length;
-
-            buffer.Write(arrLen, ArrayLength_NumBytes);
-
-            return arrDataCurrent;
+            return cur;
         }
     }
 }

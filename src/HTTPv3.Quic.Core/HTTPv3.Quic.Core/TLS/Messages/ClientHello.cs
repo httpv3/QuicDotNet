@@ -13,23 +13,25 @@ namespace HTTPv3.Quic.TLS.Messages
     internal class ClientHello : Handshake
     {
         public const int Random_NumBytes = 32;
+        public const int LegacySessionId_NumBytes = 32;
         public const int LegacySessionIdLength_NumBytes = 1;
         public const int LegacyCompressionMethods_NumBytes = 2;
         public const int ExtensionsLength_NumBytes = 2;
 
         private static SecureRandom prng = new SecureRandom();
 
-        public byte[] Random;
+        public byte[] Random = null;
+        public byte[] LegacySessionId = null;
 
-        ProtocolVersion LegacyVersion;
+        ProtocolVersion LegacyVersion = ProtocolVersion.NA;
         List<CipherSuite> CipherSuites = new List<CipherSuite>();
-        string ServerName;
-        SupportedVersionsRequest SupportedVersions = new SupportedVersionsRequest();
-        SupportedGroupsRequest SupportedGroups = new SupportedGroupsRequest();
-        SignatureAlgorithms SignatureAlgorithms = new SignatureAlgorithms();
+        string ServerName = null;
+        List<ProtocolVersion> SupportedVersions = new List<ProtocolVersion>();
+        List<NamedGroup> SupportedGroups = new List<NamedGroup>();
+        List<SignatureScheme> SignatureAlgorithms = new List<SignatureScheme>();
         List<KeyShare> KeyShares = new List<KeyShare>();
-        List<PskKeyExchangeMode> PskKeyExchangeModes;
-        List<byte[]> ApplicationLayerProtocolNegotiation;
+        List<PskKeyExchangeMode> PskKeyExchangeModes = new List<PskKeyExchangeMode>();
+        List<string> ALPN = new List<string>();
         TransportParameters TransportParameters;
 
         public ClientHello() : base(HandshakeType.ClientHello)
@@ -43,10 +45,10 @@ namespace HTTPv3.Quic.TLS.Messages
 
             data = data.Read(out ret.LegacyVersion)
                        .Read(Random_NumBytes, out ret.Random)
-                       .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out var legacySessionId)
+                       .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out _)
                        .Read(ret.CipherSuites);
 
-            data = data.Read(LegacyCompressionMethods_NumBytes, out ReadOnlySpan<byte> legacyCompressionMethods)
+            data = data.Read(LegacyCompressionMethods_NumBytes, out ReadOnlySpan<byte> _)
                        .ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out var extensionBytes);
 
             while (!extensionBytes.IsEmpty)
@@ -59,33 +61,33 @@ namespace HTTPv3.Quic.TLS.Messages
 
         private void ParseExtension(ref ReadOnlySpan<byte> data)
         {
-            data = data.Read(out ExtensionReader rdr);
+            data = data.ReadExtension(out var type, out var extBytes);
 
-            switch (rdr.Type)
+            switch (type)
             {
                 case ExtensionType.ServerName:
-                    ServerName = ServerNameList.Parse(rdr.Data);
+                    extBytes.ReadServerNameVector(out ServerName);
                     break;
                 case ExtensionType.SupportedVersions:
-                    SupportedVersions.Parse(rdr.Data);
+                    extBytes.Read(SupportedVersions);
                     break;
                 case ExtensionType.SupportedGroups:
-                    SupportedGroups.Parse(rdr.Data);
+                    extBytes.Read(SupportedGroups);
                     break;
                 case ExtensionType.SignatureAlgorithms:
-                    SignatureAlgorithms.Parse(rdr.Data);
+                    extBytes.Read(SignatureAlgorithms);
                     break;
                 case ExtensionType.KeyShare:
-                    rdr.Data.Read(KeyShares);
+                    extBytes.Read(KeyShares);
                     break;
                 case ExtensionType.PskKeyExchangeModes:
-                    PskKeyExchangeModes = Extensions.PskKeyExchangeModes.Parse(rdr.Data);
+                    extBytes.Read(PskKeyExchangeModes);
                     break;
                 case ExtensionType.ApplicationLayerProtocolNegotiation:
-                    ApplicationLayerProtocolNegotiation = Extensions.ApplicationLayerProtocolNegotiation.Parse(rdr.Data);
+                    extBytes.ReadALPN(ALPN);
                     break;
                 case ExtensionType.QuicTransportParameters:
-                    TransportParameters = TransportParameters.Parse(rdr.Data, HandshakeType.ClientHello);
+                    TransportParameters = TransportParameters.Parse(extBytes, HandshakeType.ClientHello);
                     break;
                 default:
                     break;
@@ -94,26 +96,97 @@ namespace HTTPv3.Quic.TLS.Messages
 
         public Span<byte> Write(Span<byte> data)
         {
+            if (Random == null || Random.Length != Random_NumBytes)
+                Random = SecureRandom.GetNextBytes(prng, Random_NumBytes);
+            if (LegacySessionId == null || LegacySessionId.Length != Random_NumBytes)
+                LegacySessionId = SecureRandom.GetNextBytes(prng, LegacySessionId_NumBytes);
+
             data = data.Write(ProtocolVersion.TLSv1_2)             // legacy_version 
-                       .Write(SecureRandom.GetNextBytes(prng, 32)) // random
-                       .WriteTLSVariableLength(LegacySessionIdLength_NumBytes, SecureRandom.GetNextBytes(prng, 32)) // legacy_session_id
+                       .Write(Random)                              // random
+                       .WriteTLSVariableLength(LegacySessionIdLength_NumBytes, LegacySessionId) // legacy_session_id
                        .Write(CipherSuites)                        // cipher_suites
-                       .Write(0x0);                               // legacy_compression_methods
+                       .Write(0x0);                                // legacy_compression_methods
 
             var extLengthLoc = data;
             var startOfExt = data = data.Slice(ExtensionsLength_NumBytes);
 
             if (KeyShares.Count > 0)
             {
-                var ext = data.AddExtension(ExtensionType.KeyShare);
-                ext.Current = ext.Current.Write(KeyShares);
-                data = ext.Close();
+                data = data.WriteExtension(ExtensionType.KeyShare, (buf, state) =>
+                {
+                    buf.Write(KeyShares);
+                    state.EndLength = buf.Length;
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(ServerName))
+            {
+                data = data.WriteExtension(ExtensionType.ServerName, (buf, state) =>
+                {
+                    buf.WriteServerNameVector(ServerName);
+                    state.EndLength = buf.Length;
+                });
+            }
+
+            if (ALPN.Count > 0)
+            {
+                data = data.WriteExtension(ExtensionType.ApplicationLayerProtocolNegotiation, (buf, state) =>
+                {
+                    buf.WriteALPNVector(ALPN);
+                    state.EndLength = buf.Length;
+                });
+            }
+
+            if (SupportedVersions.Count > 0)
+            {
+                data = data.WriteExtension(ExtensionType.SupportedVersions, (buf, state) =>
+                {
+                    buf.Write(SupportedVersions);
+                    state.EndLength = buf.Length;
+                });
+            }
+
+            if (SignatureAlgorithms.Count > 0)
+            {
+                data = data.WriteExtension(ExtensionType.SignatureAlgorithms, (buf, state) =>
+                {
+                    buf.Write(SignatureAlgorithms);
+                    state.EndLength = buf.Length;
+                });
+            }
+
+            if (SupportedGroups.Count > 0)
+            {
+                data = data.WriteExtension(ExtensionType.SupportedGroups, (buf, state) =>
+                {
+                    buf.Write(SupportedGroups);
+                    state.EndLength = buf.Length;
+                });
+            }
+
+            //if (TransportParameters != null)
+            //{
+            //    data = data.WriteExtension(ExtensionType.QuicTransportParameters, (buf, state) =>
+            //    {
+            //        buf = TransportParameters.Write(buf);
+            //        state.EndLength = buf.Length;
+            //    });
+            //}
+
+            if (PskKeyExchangeModes.Count > 0)
+            {
+                data = data.WriteExtension(ExtensionType.PskKeyExchangeModes, (buf, state) =>
+                {
+                    buf.Write(PskKeyExchangeModes);
+                    state.EndLength = buf.Length;
+                });
             }
 
             //if (!string.IsNullOrWhiteSpace(ServerName))
             //    data = WriteExtension(data);
 
 
+            //data.WriteVector(CipherSuites, (x, y) => x.Write(y));
 
             var extLength = startOfExt.Length - data.Length;
             extLengthLoc.Write((ulong)extLength, ExtensionsLength_NumBytes);

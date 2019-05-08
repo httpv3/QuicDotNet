@@ -39,25 +39,24 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
             return ret;
         }
 
-        public static Span<byte> Write(this Span<byte> buffer, KeyShare ks)
+        public static Span<byte> Write(this in Span<byte> buffer, KeyShare ks)
         {
-            return buffer.Write(ks.Group)
-                         .WriteTLSVariableLength(Length_NumBytes, ks.KeyExchange);
+            var ret = buffer.Write(ks.Group)
+                            .WriteTLSVariableLength(Length_NumBytes, ks.KeyExchange);
+
+            return ret;
         }
 
-        public static Span<byte> Write(this in Span<byte> buffer, in List<KeyShare> list)
+        public static Span<byte> Write(this in Span<byte> buffer, List<KeyShare> list)
         {
-            var arrDataStart = buffer.Slice(ArrayLength_NumBytes);
-            var arrDataCurrent = arrDataStart;
-
-            foreach (var ks in list)
-                arrDataCurrent = arrDataCurrent.Write(ks);
-
-            int arrLen = arrDataStart.Length - arrDataCurrent.Length;
-
-            buffer.Write(arrLen, ArrayLength_NumBytes);
-
-            return arrDataCurrent;
+            return buffer.WriteVector(ArrayLength_NumBytes, (buf, state) =>
+            {
+                foreach (var item in list)
+                {
+                    buf = buf.Write(item);
+                }
+                state.EndLength = buf.Length;
+            });
         }
     }
 }

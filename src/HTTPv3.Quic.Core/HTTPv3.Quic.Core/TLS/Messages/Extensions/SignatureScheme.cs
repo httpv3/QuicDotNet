@@ -36,4 +36,57 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
         rsa_pkcs1_sha1 = 0x0201,
         ecdsa_sha1 = 0x0203,
     }
+
+    internal static class SignatureSchemeExtensions
+    {
+        public const int ArrayLength_NumBytes = 2;
+        public const int Length_NumBytes = 2;
+
+        public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, out SignatureScheme scheme)
+        {
+            var ret = bytesIn.Read(Length_NumBytes, out ushort val);
+
+            scheme = ParseValue(val);
+
+            return ret;
+        }
+
+        public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, in List<SignatureScheme> list)
+        {
+            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+
+            while (!arrData.IsEmpty)
+            {
+                arrData = arrData.Read(out SignatureScheme item);
+                list.Add(item);
+            }
+
+            return ret;
+        }
+
+        public static SignatureScheme ParseValue(ushort value)
+        {
+            if (Enum.IsDefined(typeof(SignatureScheme), value))
+                return (SignatureScheme)value;
+
+            return SignatureScheme.NA;
+        }
+
+        public static Span<byte> Write(this in Span<byte> buffer, SignatureScheme value)
+        {
+            return buffer.Write((ushort)value, Length_NumBytes);
+        }
+
+        public static Span<byte> Write(this in Span<byte> buffer, List<SignatureScheme> list)
+        {
+            return buffer.WriteVector(ArrayLength_NumBytes, (buf, state) =>
+            {
+                foreach (var item in list)
+                    if (item != SignatureScheme.NA)
+                        buf = buf.Write(item);
+
+                state.EndLength = buf.Length;
+            });
+        }
+    }
 }

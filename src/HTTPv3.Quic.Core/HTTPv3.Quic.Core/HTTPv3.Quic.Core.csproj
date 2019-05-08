@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>HTTPv3.Quic</RootNamespace>
     <LangVersion>7.2</LangVersion>
   </PropertyGroup>
@@ -10,7 +10,6 @@
     <PackageReference Include="BouncyCastle.NetCore" Version="1.8.5" />
     <PackageReference Include="System.Buffers" Version="4.5.0" />
     <PackageReference Include="System.Data.HashFunction.FNV" Version="2.0.0" />
-    <PackageReference Include="System.Memory" Version="4.5.2" />
   </ItemGroup>
 
   <ItemGroup>

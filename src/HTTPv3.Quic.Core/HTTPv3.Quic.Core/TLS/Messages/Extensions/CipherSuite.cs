@@ -35,8 +35,8 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
             while (!arrData.IsEmpty)
             {
-                arrData = arrData.Read(out CipherSuite g);
-                list.Add(g);
+                arrData = arrData.Read(out CipherSuite item);
+                list.Add(item);
             }
 
             return ret;
@@ -50,25 +50,18 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
             return CipherSuite.NA;
         }
 
-        public static Span<byte> Write(this in Span<byte> buffer, CipherSuite cs)
+        public static Span<byte> Write(this in Span<byte> buffer, CipherSuite cs) => buffer.Write((ushort)cs, Length_NumBytes);
+
+        public static Span<byte> Write(this in Span<byte> buffer, List<CipherSuite> list)
         {
-            return buffer.Write((ushort)cs, Length_NumBytes);
-        }
+            return buffer.WriteVector(ArrayLength_NumBytes, (buf, state) =>
+            {
+                foreach (var item in list)
+                    if (item != CipherSuite.NA)
+                        buf = buf.Write(item);
 
-        public static Span<byte> Write(this in Span<byte> buffer, in List<CipherSuite> list)
-        {
-            var arrDataStart = buffer.Slice(ArrayLength_NumBytes);
-            var arrDataCurrent = arrDataStart;
-
-            foreach (var cs in list)
-                if (cs != CipherSuite.NA)
-                    arrDataCurrent = arrDataCurrent.Write(cs);
-
-            int arrLen = arrDataStart.Length - arrDataCurrent.Length;
-
-            buffer.Write(arrLen, ArrayLength_NumBytes);
-
-            return arrDataCurrent;
+                state.EndLength = buf.Length;
+            });
         }
     }
 }

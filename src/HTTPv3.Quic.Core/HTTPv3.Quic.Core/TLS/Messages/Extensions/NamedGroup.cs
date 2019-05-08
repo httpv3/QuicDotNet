@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
@@ -23,6 +24,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
     internal static class NamedGroupExtensions
     {
+        public const int ArrayLength_NumBytes = 2;
         public const int Length_NumBytes = 2;
 
         public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, out NamedGroup namedGroup)
@@ -30,6 +32,19 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
             var ret = bytesIn.Read(Length_NumBytes, out ushort val);
 
             namedGroup = ParseValue(val);
+
+            return ret;
+        }
+
+        public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, in List<NamedGroup> list)
+        {
+            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+
+            while (!arrData.IsEmpty)
+            {
+                arrData = arrData.Read(out NamedGroup item);
+                list.Add(item);
+            }
 
             return ret;
         }
@@ -45,6 +60,18 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
         public static Span<byte> Write(this in Span<byte> buffer, NamedGroup value)
         {
             return buffer.Write((ushort)value, Length_NumBytes);
+        }
+
+        public static Span<byte> Write(this in Span<byte> buffer, List<NamedGroup> list)
+        {
+            return buffer.WriteVector(ArrayLength_NumBytes, (buf, state) =>
+            {
+                foreach (var item in list)
+                    if (item != NamedGroup.NA)
+                        buf = buf.Write(item);
+
+                state.EndLength = buf.Length;
+            });
         }
     }
 }
