@@ -78,26 +78,6 @@ namespace HTTPv3.Quic.Messages.Extensions
         {
             TransportParameters ret = new TransportParameters();
 
-            // Backwards compatibility for Version 18
-            if (handshakeType == HandshakeType.ClientHello)
-            {
-                data = data.Read(4, out ReadOnlySpan<byte> versionBytes);
-                ret.InitialVersion = LongHeader.ParseVersionType(versionBytes);
-
-            }
-            else if (handshakeType == HandshakeType.EncryptedExtensions)
-            {
-                data = data.Read(4, out ReadOnlySpan<byte> negotiatedVersion)
-                           .ReadNextTLSVariableLength(SupportedVersionsArrayLength_NumBytes, out var versionArrData);
-                ret.NegotiatedVersion = LongHeader.ParseVersionType(negotiatedVersion);
-
-                while (!versionArrData.IsEmpty)
-                {
-                    versionArrData = versionArrData.Read(4, out ReadOnlySpan<byte> versionBytes);
-                    ret.SupportedVersions.Add(LongHeader.ParseVersionType(versionBytes));
-                }
-            }
-
             data = data.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
 
 

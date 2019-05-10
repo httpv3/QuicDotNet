@@ -1,74 +1,18 @@
 {
-  "clientId": "2a854833d96efe9c",
-  "serverId": "fbe795081ceabed2",
-  "files": [
-    {
-      "sequence": 1,
-      "name": "1.c.initial.bin",
-      "source": "client"
-    },
-    {
-      "sequence": 2,
-      "name": "2.s.initial.bin",
-      "source": "server"
-    },
-    {
-      "sequence": 3,
-      "name": "3.s.handshake.bin",
-      "source": "server"
-    },
-    {
-      "sequence": 4,
-      "name": "4.s.payload.bin",
-      "source": "server"
-    },
-    {
-      "sequence": 5,
-      "name": "5.c.initial.bin",
-      "source": "client"
-    },
-    {
-      "sequence": 6,
-      "name": "6.c.handshake.bin",
-      "source": "client"
-    },
-    {
-      "sequence": 7,
-      "name": "7.c.payload.bin",
-      "source": "client"
-    },
-    {
-      "sequence": 8,
-      "name": "8.s.handshake.bin",
-      "source": "server"
-    },
-    {
-      "sequence": 9,
-      "name": "9.s.payload.bin",
-      "source": "server"
-    },
-    {
-      "sequence": 10,
-      "name": "10.c.payload.bin",
-      "source": "client"
-    },
-    {
-      "sequence": 11,
-      "name": "11.c.payload.bin",
-      "source": "client"
-    }
-  ],
+  "clientId": "fb4c7b47769cbedf",
+  "clientIp": "4246e77c",
+  "serverId": "7720191e210dbc4d",
   "secrets": {
-    "initial": "174d1953def9d2c2",
+    "initial": "d5c986791d0293ec",
     "handshake": {
-      "client": "228c5bb650564b55f1bd36310694ffcae18690b381eec01715596ca4b217d403eb2beade40532ceae4f39d800222efac",
+      "client": "e42d916b5191ec9092151b5b96ac53059fc0157706d91675b1b5ff1479fa38462a42e8bb463eaa054c34909fd3b20358",
       "server": "2dae23de06bb5f69a76efe0f0a49899e072d0730a0a1cd5b5e5be52b951440fabca84e59f8926e340477b1a29a88d9c8",
       "cipherSuite": "TLS_AES_256_GCM_SHA384"
     },
     "application": [
       {
-        "client": "c78e427fb8ee36d286f6c9e41a81a7e3a34170cf6e7d04d26e779ee3f916e81af665a8b7e8257a0054f06e3579cf02eb",
-        "server": "6c57a1164a6c806b8103b7da63b500fb5cc29758566aad9aea030c46b7f85b33cf8f488b5ca1e40912e0b5c0c1080674",
+        "client": "12768ccaa8a2b34c5d642a66aeabb2a8a170e104f30454a39c6676679b893efad12b1b3322ccb624bba8dce3f2c8d8c0",
+        "server": "bf931b718eb8ea12826271e4c643dff0cb411ca4e1fb69fbf8ed32f52c805454d5b8903c36915094b5c04be5fd607a9c",
         "cipherSuite": "TLS_AES_256_GCM_SHA384"
       }
     ]

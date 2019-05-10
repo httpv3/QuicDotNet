@@ -3,6 +3,7 @@ using HTTPv3.Quic.TLS;
 using HTTPv3.Quic.TLS.Messages.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PcapngFile;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace HTTPv3.Quic.Messages
     class MessageSets : IEnumerable<DataFile>
     {
         public static MessageSets Set1 = new MessageSets(1);
-        public static MessageSets Set2 = new MessageSets(2);
+        //public static MessageSets Set2 = new MessageSets(2);
 
         private readonly Dictionary<int, DataFile> files = new Dictionary<int, DataFile>();
         public DataFile this[int i] { get { return files[i].Clone(); } }
@@ -36,10 +37,28 @@ namespace HTTPv3.Quic.Messages
             ClientId = new ClientConnectionId(index.ClientId.ToByteArrayFromHex());
             ServerId = new ServerConnectionId(index.ServerId.ToByteArrayFromHex());
 
-            foreach (var file in index.Files)
+            var clientIp = index.ClientIp.ToByteArrayFromHex();
+
+            using (var rdr = new Reader(ConstructFileName(setNum, "wireshark.pcapng")))
             {
-                file.Data = LoadBinFile(setNum, file.Name);
-                files[file.Sequence] = file;
+                int i = 1;
+                foreach (var packet in rdr.AllBlocks.Select(x => x as EnhancedPacketBlock).Where(x=>x != null))
+                {
+                    var data = packet.Data.AsSpan()
+                                          .ReadBytes(14, out _)
+                                          .ReadByte(out var ipHeader)
+                                          .ReadBytes((ipHeader & 0xf) * 4 - 9, out _)
+                                          .ReadBytes(4, out var source)
+                                          .ReadBytes(4, out _)
+                                          .ReadBytes(8, out _);
+
+                    files[i] = new DataFile()
+                    {
+                        Sequence = i++,
+                        Data = data.ToArray(),
+                        Source = source.SequenceEqual(clientIp) ? DataFileSources.Client : DataFileSources.Server,
+                    };
+                }
             }
 
             if (index.Secrets != null)
@@ -85,16 +104,6 @@ namespace HTTPv3.Quic.Messages
             }
         }
 
-        private byte[] LoadBinFile(int setNum, string filename)
-        {
-            string fullFileName = ConstructFileName(setNum, filename);
-            FileInfo fi = new FileInfo(fullFileName);
-            if (!fi.Exists)
-                return null;
-
-            return File.ReadAllBytes(fullFileName);
-        }
-
         private string ConstructFileName(int setNum, string filename)
         {
             return $"../../../Messages/Data/{setNum}/{filename}";
@@ -115,6 +124,7 @@ namespace HTTPv3.Quic.Messages
     public class Index
     {
         public string ClientId;
+        public string ClientIp;
         public string ServerId;
 
         public DataFile[] Files;
@@ -124,7 +134,6 @@ namespace HTTPv3.Quic.Messages
     public class DataFile
     {
         public int Sequence;
-        public string Name;
         public DataFileSources Source;
         public byte[] Data;
 
@@ -135,7 +144,6 @@ namespace HTTPv3.Quic.Messages
             return new DataFile()
             {
                 Sequence = Sequence,
-                Name = Name,
                 Source = Source,
                 Data = Data.ToArray()
             };
