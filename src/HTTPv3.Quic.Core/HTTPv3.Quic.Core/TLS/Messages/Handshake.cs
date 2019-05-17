@@ -15,27 +15,22 @@ namespace HTTPv3.Quic.TLS.Messages
             MessageType = messageType;
         }
 
-        public static Handshake Parse(ref ReadOnlySpan<byte> data)
+        public static Handshake Parse(in RawRecord r)
         {
-            data = data.Read(out byte typeByte)
-                       .ReadNextTLSVariableLength(Length_NumBytes, out var extensionBytes);
-
-            HandshakeType type = (HandshakeType)typeByte;
-
-            switch (type)
+            switch (r.HandshakeType)
             {
                 case HandshakeType.ClientHello:
-                    return ClientHello.Parse(extensionBytes);
+                    return ClientHello.Parse(r.Data);
                 case HandshakeType.ServerHello:
-                    return new ServerHello(extensionBytes);
+                    return new ServerHello(r.Data);
                 case HandshakeType.EncryptedExtensions:
-                    return new EncryptedExtensions(extensionBytes);
+                    return new EncryptedExtensions(r.Data);
                 case HandshakeType.Certificate:
-                    return new CertificateExtension(extensionBytes);
+                    return new CertificateExtension(r.Data);
                 case HandshakeType.CertificateVerify:
-                    return new CertificateVerify(extensionBytes);
+                    return new CertificateVerify(r.Data);
                 case HandshakeType.Finished:
-                    return new FinishedExtension(extensionBytes);
+                    return new FinishedExtension(r.Data);
                 default:
                     return null;
             }

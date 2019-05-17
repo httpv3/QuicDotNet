@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace HTTPv3.Quic.TLS
+namespace HTTPv3.Quic.Security
 {
     // IETF quic-transport draft-19
     // 5.  Packet Protection

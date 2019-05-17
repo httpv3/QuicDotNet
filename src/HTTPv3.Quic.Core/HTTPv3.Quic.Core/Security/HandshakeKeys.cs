@@ -1,7 +1,7 @@
 ﻿using HTTPv3.Quic.TLS.Messages.Extensions;
 using System;
 
-namespace HTTPv3.Quic.TLS
+namespace HTTPv3.Quic.Security
 {
     // IETF quic-transport draft-19
     // 5.  Packet Protection

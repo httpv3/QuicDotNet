@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace HTTPv3.Quic.TLS
+namespace HTTPv3.Quic.Security
 {
     internal class EncryptionKeys
     {

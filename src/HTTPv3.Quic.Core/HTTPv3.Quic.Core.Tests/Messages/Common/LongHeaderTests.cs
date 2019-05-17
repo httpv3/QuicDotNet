@@ -8,35 +8,6 @@ namespace HTTPv3.Quic.Messages.Common
     public class LongHeaderTests
     {
         [TestMethod]
-        public void HappyPathSet1()
-        {
-            var set = MessageSets.Set1;
-
-            Connection conn = set.ServerConnection;
-
-            var file = set[1];
-            var packet = Packet.ParseNewPacket(file.Data, file.FromClient, conn);
-
-            var version = new ReadOnlySpan<byte>("ff000012".ToByteArrayFromHex());
-            var versionType = VersionTypes.Draft_18;
-            byte typeSpecificBits = 0x0;
-            var destConnId = new ReadOnlySpan<byte>("174d1953def9d2c2".ToByteArrayFromHex());
-            var sourceConnId = new ReadOnlySpan<byte>("2a854833d96efe9c".ToByteArrayFromHex());
-
-            var header = packet.LongHeader;
-
-            Assert.AreEqual(LongHeaderPacketTypes.Initial, header.LongPacketType);
-            Assert.AreEqual(typeSpecificBits, header.TypeSpecificBits);
-            Assert.IsTrue(version.SequenceEqual(header.Version));
-            Assert.AreEqual(versionType, header.VersionType);
-
-            Assert.IsTrue(destConnId.SequenceEqual(header.DestinationConnID));
-            Assert.IsTrue(sourceConnId.SequenceEqual(header.SourceConnID));
-
-            Assert.AreEqual(22, header.HeaderBytes.Length);
-        }
-
-        [TestMethod]
         public void ThrowExceptionIfNotLongHeader()
         {
             var bytes = MessageSets.Set1[1].Data;

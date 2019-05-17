@@ -1,5 +1,6 @@
 ﻿using HTTPv3.Quic.Messages.Client;
 using HTTPv3.Quic.Messages.Frames;
+using HTTPv3.Quic.Security;
 using System;
 
 namespace HTTPv3.Quic.Messages.Common
@@ -65,7 +66,7 @@ namespace HTTPv3.Quic.Messages.Common
                         p.LongHeader.RemoveHeaderProtection(ref p);
                         p.Initial.RemoveHeaderProtection(ref p);
 
-                        p.DecryptPayLoad(p.Connection.TLSConn.InitialKeys.EncryptionKeys);
+                        p.DecryptPayLoad(p.Connection.InitialKeys.EncryptionKeys);
                         break;
                     case LongHeaderPacketTypes.Handshake:
                         p.Handshake = new Handshake(ref p);
@@ -74,7 +75,7 @@ namespace HTTPv3.Quic.Messages.Common
                         p.LongHeader.RemoveHeaderProtection(ref p);
                         p.Handshake.RemoveHeaderProtection(ref p);
 
-                        p.DecryptPayLoad(p.Connection.TLSConn.HandshakeKeys.EncryptionKeys);
+                        p.DecryptPayLoad(p.Connection.HandshakeKeys.EncryptionKeys);
                         break;
                 }
             }
@@ -89,7 +90,7 @@ namespace HTTPv3.Quic.Messages.Common
                 p.HeaderProtectionMask = p.ShortHeader.ComputeDecryptionHeaderProtectionMask(ref p);
                 p.ShortHeader.RemoveHeaderProtection(ref p);
 
-                p.DecryptPayLoad(p.Connection.TLSConn.ApplicationKeys.EncryptionKeys);
+                p.DecryptPayLoad(p.Connection.ApplicationKeys.EncryptionKeys);
             }
 
             return p;
@@ -129,7 +130,7 @@ namespace HTTPv3.Quic.Messages.Common
             }
         }
 
-        private void DecryptPayLoad(TLS.EncryptionKeys keys)
+        private void DecryptPayLoad(EncryptionKeys keys)
         {
             PayloadCursor = Payload = keys.DecryptPayload(HeaderBytes, EncryptedPayload, PacketNumber);
             State = PacketState.Decrypted;

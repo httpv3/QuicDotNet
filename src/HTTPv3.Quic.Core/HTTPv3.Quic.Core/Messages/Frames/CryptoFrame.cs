@@ -16,10 +16,6 @@ namespace HTTPv3.Quic.Messages.Frames
                                              .ReadNextVariableInt(out int length)
                                              .Read(length, out ReadOnlySpan<byte> data);
 
-            while (!data.IsEmpty)
-            {
-                HandshakeMessages.Add(Handshake.Parse(ref data));
-            }
         }
     }
 }

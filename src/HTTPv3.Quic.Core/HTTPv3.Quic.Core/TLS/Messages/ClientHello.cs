@@ -23,16 +23,16 @@ namespace HTTPv3.Quic.TLS.Messages
         public byte[] Random = null;
         public byte[] LegacySessionId = null;
 
-        ProtocolVersion LegacyVersion = ProtocolVersion.NA;
-        List<CipherSuite> CipherSuites = new List<CipherSuite>();
-        string ServerName = null;
-        List<ProtocolVersion> SupportedVersions = new List<ProtocolVersion>();
-        List<NamedGroup> SupportedGroups = new List<NamedGroup>();
-        List<SignatureScheme> SignatureAlgorithms = new List<SignatureScheme>();
-        List<KeyShare> KeyShares = new List<KeyShare>();
-        List<PskKeyExchangeMode> PskKeyExchangeModes = new List<PskKeyExchangeMode>();
-        List<string> ALPN = new List<string>();
-        TransportParameters TransportParameters;
+        public ProtocolVersion LegacyVersion = ProtocolVersion.NA;
+        public List<CipherSuite> CipherSuites = new List<CipherSuite>();
+        public string ServerName = null;
+        public List<ProtocolVersion> SupportedVersions = new List<ProtocolVersion>();
+        public List<NamedGroup> SupportedGroups = new List<NamedGroup>();
+        public List<SignatureScheme> SignatureAlgorithms = new List<SignatureScheme>();
+        public List<KeyShare> KeyShares = new List<KeyShare>();
+        public List<PskKeyExchangeMode> PskKeyExchangeModes = new List<PskKeyExchangeMode>();
+        public List<string> ALPN = new List<string>();
+        public TransportParameters TransportParameters;
 
         public ClientHello() : base(HandshakeType.ClientHello)
         {

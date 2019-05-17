@@ -1,15 +1,20 @@
 ﻿using HTTPv3.Quic.Messages.Extensions;
+using HTTPv3.Quic.Security;
 using HTTPv3.Quic.TLS;
 using System;
 using System.Collections.Generic;
+using System.IO.Pipelines;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HTTPv3.Quic
 {
     public class Connection
     {
+        public CancellationToken cancel = new CancellationToken();
+
         public ConnectionState ConnectionState { get; private set; } = ConnectionState.NotConnected;
 
         public ClientConnectionId ClientConnectionId;
@@ -17,16 +22,23 @@ namespace HTTPv3.Quic
         public IPEndPoint RemoteEndPoint;
         public string ServerName;
 
-        internal TLS.Connection TLSConn;
+        internal ApplicationKeys ApplicationKeys;
+        internal HandshakeKeys HandshakeKeys;
+        internal InitialKeys InitialKeys;
+
+        internal TLS.ClientConnection TLSConn;
 
         public bool IsServer = false;
 
         public ConnectionId MyConnectionId {  get { return IsServer ? ServerConnectionId as ConnectionId : ClientConnectionId as ConnectionId; } }
 
+        private Pipe TLSSender = new Pipe();
+        private Pipe TLSReceiver = new Pipe();
+
         internal Connection(byte[] clientChosenDestinationId, bool isServer)
         {
             IsServer = isServer;
-            TLSConn = new TLS.Connection(clientChosenDestinationId, isServer);
+            TLSConn = new TLS.ClientConnection(TLSSender.Reader, TLSReceiver.Writer, cancel);
         }
 
         internal async Task SendConnect()

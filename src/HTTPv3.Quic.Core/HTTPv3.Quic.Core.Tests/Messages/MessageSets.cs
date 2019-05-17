@@ -1,4 +1,5 @@
 ﻿using HTTPv3.Quic.Messages.Common;
+using HTTPv3.Quic.Security;
 using HTTPv3.Quic.TLS;
 using HTTPv3.Quic.TLS.Messages.Extensions;
 using Newtonsoft.Json;
@@ -81,8 +82,8 @@ namespace HTTPv3.Quic.Messages
 
             if (secrets.Handshake != null)
             {
-                ClientConnection.TLSConn.HandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, false);
-                ServerConnection.TLSConn.HandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, true);
+                ClientConnection.HandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, false);
+                ServerConnection.HandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, true);
             }
 
             if (secrets.Application != null)
@@ -99,8 +100,8 @@ namespace HTTPv3.Quic.Messages
                 ClientApplicationKeys = cKeys.ToArray();
                 ServerApplicationKeys = sKeys.ToArray();
 
-                ClientConnection.TLSConn.ApplicationKeys = ClientApplicationKeys[0];
-                ServerConnection.TLSConn.ApplicationKeys = ServerApplicationKeys[0];
+                ClientConnection.ApplicationKeys = ClientApplicationKeys[0];
+                ServerConnection.ApplicationKeys = ServerApplicationKeys[0];
             }
         }
 

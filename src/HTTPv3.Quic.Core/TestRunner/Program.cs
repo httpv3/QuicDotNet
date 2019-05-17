@@ -1,5 +1,6 @@
 ﻿using HTTPv3.Quic;
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -7,9 +8,9 @@ namespace TestRunner
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            Run().Wait();
+            await Run();
         }
         async static Task Run()
         {
