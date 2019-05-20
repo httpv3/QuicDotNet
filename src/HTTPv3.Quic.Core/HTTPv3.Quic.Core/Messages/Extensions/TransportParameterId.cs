@@ -11,6 +11,26 @@ namespace HTTPv3.Quic.Messages.Extensions
     // IETF quic-transport draft-19
     // 18.1.  Transport Parameter Definitions
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-18.1
+    internal enum TransportParameterId : ushort
+    {
+        OriginalConnectionId = 0,
+        IdleTimeout = 1,
+        StatelessResetToken = 2,
+        MaxPacketSize = 3,
+        InitialMaxData = 4,
+        InitialMaxStreamDataBidiLocal = 5,
+        InitialMaxStreamDataBidiRemote = 6,
+        InitialMaxStreamDataUni = 7,
+        InitialMaxStreamsBidi = 8,
+        InitialMaxStreamsUni = 9,
+        AckDelayExponent = 10,
+        MaxAckDelay = 11,
+        DisableMigration = 12,
+        PreferredAddress = 13,
+
+        NA = 0xffff,
+    }
+
     internal static class TransportParameterIdExtensions
     {
         public const int Type_NumBytes = 2;
@@ -37,25 +57,15 @@ namespace HTTPv3.Quic.Messages.Extensions
             return buffer.Write((ushort)type, Type_NumBytes);
         }
 
-    }
+        public static Span<byte> WriteParameterValue(this in Span<byte> buffer, TransportParameterId type, ulong value)
+        {
+            return buffer.Write(type)
+                         .WriteVector(1, (buf, state) =>
+                         {
+                             buf = buf.WriteVarLengthInt(value);
+                             state.EndLength = buf.Length;
+                         });
+        }
 
-    internal enum TransportParameterId : ushort
-    {
-        OriginalConnectionId = 0,
-        IdleTimeout = 1,
-        StatelessResetToken = 2,
-        MaxPacketSize = 3,
-        InitialMaxData = 4,
-        InitialMaxStreamDataBidiLocal = 5,
-        InitialMaxStreamDataBidiRemote = 6,
-        InitialMaxStreamDataUni = 7,
-        InitialMaxStreamsBidi = 8,
-        InitialMaxStreamsUni = 9,
-        AckDelayExponent = 10,
-        MaxAckDelay = 11,
-        DisableMigration = 12,
-        PreferredAddress = 13,
-
-        NA = 0xffff,
     }
 }

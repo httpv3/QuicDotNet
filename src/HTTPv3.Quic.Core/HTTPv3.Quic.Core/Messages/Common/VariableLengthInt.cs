@@ -7,7 +7,7 @@ namespace HTTPv3.Quic.Messages.Common
     // IETF quic-transport draft-19
     // 16.  Variable-Length Integer Encoding
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-16
-    public class VariableLengthInt
+    public static class VariableLengthInt
     {
         public const ulong Max1Byte = 63;
         public const ulong Max2Byte = 16383;
@@ -96,6 +96,30 @@ namespace HTTPv3.Quic.Messages.Common
                 bytes[0] |= 0b1100_0000;
 
             return numBytes;
+        }
+
+        public static Span<byte> WriteVarLengthInt(this in Span<byte> bytes, ulong value)
+        {
+            if (value > Max8Byte) throw new ArithmeticException($"VariableLengthInt.Write: Value {value} too large to encode.");
+
+            int numBytes = GetNumberOfBytesNeeded(value);
+
+            if (bytes.Length < numBytes) throw new ArithmeticException($"VariableLengthInt.Write: Cannot fit {numBytes} into {bytes.Length}.");
+
+            for (int i = numBytes - 1; i >= 0; i--)
+            {
+                bytes[i] = (byte)(value & 0xFF);
+                value >>= 8;
+            }
+
+            if (numBytes == 2)
+                bytes[0] |= 0b0100_0000;
+            else if (numBytes == 4)
+                bytes[0] |= 0b1000_0000;
+            else if (numBytes == 8)
+                bytes[0] |= 0b1100_0000;
+
+            return bytes.Slice(numBytes);
         }
     }
 }

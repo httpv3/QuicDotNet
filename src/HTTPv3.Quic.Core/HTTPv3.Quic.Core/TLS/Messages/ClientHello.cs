@@ -96,27 +96,33 @@ namespace HTTPv3.Quic.TLS.Messages
             }
         }
 
-        public Span<byte> Write(Span<byte> data)
+        public Span<byte> Write(in Span<byte> buffer)
         {
             if (Random == null || Random.Length != Random_NumBytes)
                 Random = SecureRandom.GetNextBytes(prng, Random_NumBytes);
             if (LegacySessionId == null || LegacySessionId.Length != Random_NumBytes)
                 LegacySessionId = SecureRandom.GetNextBytes(prng, LegacySessionId_NumBytes);
 
-            data = data.Write(ProtocolVersion.TLSv1_2)             // legacy_version 
-                       .Write(Random)                              // random
-                       .WriteTLSVariableLength(LegacySessionIdLength_NumBytes, LegacySessionId) // legacy_session_id
-                       .Write(CipherSuites)                        // cipher_suites
-                       .Write(0x1).Write(0x0);                                // legacy_compression_methods
+            return buffer.Write(ProtocolVersion.TLSv1_2)                                          // legacy_version 
+                         .Write(Random)                                                           // random
+                         .WriteTLSVariableLength(LegacySessionIdLength_NumBytes, LegacySessionId) // legacy_session_id
+                         .Write(CipherSuites)                                                     // cipher_suites
+                         .Write(0x1).Write(0x0)                                                   // legacy_compression_methods
+                         .WriteVector(ExtensionsLength_NumBytes, (buf, state) =>
+                         {
+                             buf = WriteExtensions(buf);
+                             state.EndLength = buf.Length;
+                         });
+        }
 
-            var extLengthLoc = data;
-            var startOfExt = data = data.Slice(ExtensionsLength_NumBytes);
-
+        public Span<byte> WriteExtensions(in Span<byte> buffer)
+        {
+            var data = buffer;
             if (KeyShares.Count > 0)
             {
                 data = data.WriteExtension(ExtensionType.KeyShare, (buf, state) =>
                 {
-                    buf.Write(KeyShares);
+                    buf = buf.Write(KeyShares);
                     state.EndLength = buf.Length;
                 });
             }
@@ -125,7 +131,7 @@ namespace HTTPv3.Quic.TLS.Messages
             {
                 data = data.WriteExtension(ExtensionType.ServerName, (buf, state) =>
                 {
-                    buf.WriteServerNameVector(ServerName);
+                    buf = buf.WriteServerNameVector(ServerName);
                     state.EndLength = buf.Length;
                 });
             }
@@ -134,7 +140,7 @@ namespace HTTPv3.Quic.TLS.Messages
             {
                 data = data.WriteExtension(ExtensionType.ApplicationLayerProtocolNegotiation, (buf, state) =>
                 {
-                    buf.WriteALPNVector(ALPN);
+                    buf = buf.WriteALPNVector(ALPN);
                     state.EndLength = buf.Length;
                 });
             }
@@ -143,7 +149,7 @@ namespace HTTPv3.Quic.TLS.Messages
             {
                 data = data.WriteExtension(ExtensionType.SupportedVersions, (buf, state) =>
                 {
-                    buf.Write(SupportedVersions);
+                    buf = buf.Write(SupportedVersions);
                     state.EndLength = buf.Length;
                 });
             }
@@ -152,7 +158,7 @@ namespace HTTPv3.Quic.TLS.Messages
             {
                 data = data.WriteExtension(ExtensionType.SignatureAlgorithms, (buf, state) =>
                 {
-                    buf.Write(SignatureAlgorithms);
+                    buf = buf.Write(SignatureAlgorithms);
                     state.EndLength = buf.Length;
                 });
             }
@@ -161,7 +167,7 @@ namespace HTTPv3.Quic.TLS.Messages
             {
                 data = data.WriteExtension(ExtensionType.SupportedGroups, (buf, state) =>
                 {
-                    buf.Write(SupportedGroups);
+                    buf = buf.Write(SupportedGroups);
                     state.EndLength = buf.Length;
                 });
             }
@@ -179,12 +185,10 @@ namespace HTTPv3.Quic.TLS.Messages
             {
                 data = data.WriteExtension(ExtensionType.PskKeyExchangeModes, (buf, state) =>
                 {
-                    buf.Write(PskKeyExchangeModes);
+                    buf = buf.Write(PskKeyExchangeModes);
                     state.EndLength = buf.Length;
                 });
             }
-
-            extLengthLoc.Write(startOfExt.Length - data.Length, ExtensionsLength_NumBytes);
 
             return data;
         }
