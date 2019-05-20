@@ -12,7 +12,7 @@ namespace HTTPv3.Quic.TLS.Messages
 
     internal static class VectorExtensions
     {
-        public static Span<byte> WriteVector(this Span<byte> buffer, int vectorLen_numBytes, SpanAction<byte, VectorState> action)
+        public static Span<byte> WriteVector(this in Span<byte> buffer, int vectorLen_numBytes, SpanAction<byte, VectorState> action)
         {
             var state = new VectorState();
             var data = buffer.Slice(vectorLen_numBytes);

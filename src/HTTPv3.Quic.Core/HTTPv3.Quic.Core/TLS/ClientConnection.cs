@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO.Pipelines;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HTTPv3.Quic.Messages.Extensions;
 using HTTPv3.Quic.TLS.Messages;
 using HTTPv3.Quic.TLS.Messages.Extensions;
+using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -49,7 +52,6 @@ namespace HTTPv3.Quic.TLS
         {
             var hello = new ClientHello()
             {
-                LegacyVersion = ProtocolVersion.TLSv1_2,
                 ServerName = serverName,
                 TransportParameters = TransportParameters.Default
             };
@@ -70,19 +72,16 @@ namespace HTTPv3.Quic.TLS
         {
             var key = new byte[65];
 
-            //var g = new DsaKeyPairGenerator();
-            //var p = new DsaParameters()
-            //var kp = new DsaKeyGenerationParameters
-            //g.Init(kp);
-            //var pair = g.GenerateKeyPair();
+            IAsymmetricCipherKeyPairGenerator bcKpGen = GeneratorUtilities.GetKeyPairGenerator("ECDSA");
+            bcKpGen.Init(new ECKeyGenerationParameters(SecObjectIdentifiers.SecP256r1, prng));
+            AsymmetricCipherKeyPair pair = bcKpGen.GenerateKeyPair();
 
-            //SubjectPublicKeyInfo info = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(pair.Public);
-            //String publicKey = Convert.ToBase64String(info.GetDerEncoded());
+            SubjectPublicKeyInfo info = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(pair.Public);
 
             return new KeyShare()
             {
                 Group = NamedGroup.secp256r1,
-                KeyExchange = key,
+                KeyExchange = info.PublicKeyData.GetBytes(),
             };
         }
     }

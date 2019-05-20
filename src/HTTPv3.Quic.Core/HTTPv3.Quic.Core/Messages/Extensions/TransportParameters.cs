@@ -3,6 +3,7 @@ using HTTPv3.Quic.Messages.Common;
 using HTTPv3.Quic.TLS.Messages;
 using HTTPv3.Quic.TLS.Messages.Extensions;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 
 namespace HTTPv3.Quic.Messages.Extensions
@@ -12,6 +13,7 @@ namespace HTTPv3.Quic.Messages.Extensions
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-18.1
     internal class TransportParameters
     {
+        public const int Type_NumBytes = 2;
         public const int ArrayLength_NumBytes = 2;
         public const int SupportedVersionsArrayLength_NumBytes = 1;
         public const int NamedGroupLength_NumBytes = 2;
@@ -144,23 +146,5 @@ namespace HTTPv3.Quic.Messages.Extensions
                     break;
             }
         }
-    }
-
-    internal enum TransportParameterId : ushort
-    {
-        OriginalConnectionId = 0,
-        IdleTimeout = 1,
-        StatelessResetToken = 2,
-        MaxPacketSize = 3,
-        InitialMaxData = 4,
-        InitialMaxStreamDataBidiLocal = 5,
-        InitialMaxStreamDataBidiRemote = 6,
-        InitialMaxStreamDataUni = 7,
-        InitialMaxStreamsBidi = 8,
-        InitialMaxStreamsUni = 9,
-        AckDelayExponent = 10,
-        MaxAckDelay = 11,
-        DisableMigration = 12,
-        PreferredAddress = 13,
     }
 }

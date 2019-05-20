@@ -11,10 +11,10 @@ namespace HTTPv3.Quic
 
         public QuicClient(string serverName, short port)
         {
-            var addresses = Dns.GetHostAddresses(serverName);
+            var addresses = new[] { new IPAddress(0) }; // Dns.GetHostAddresses(serverName);
             var serverConn = ServerConnectionId.Generate();
 
-            conn = new Connection(serverConn.ConnectionIdBytes, false)
+            conn = new Connection(serverConn.ConnectionIdBytes, serverName, false)
             {
                 ClientConnectionId = ClientConnectionId.Generate(),
                 ServerConnectionId = serverConn,

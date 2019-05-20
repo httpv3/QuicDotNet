@@ -35,8 +35,9 @@ namespace HTTPv3.Quic
         private Pipe TLSSender = new Pipe();
         private Pipe TLSReceiver = new Pipe();
 
-        internal Connection(byte[] clientChosenDestinationId, bool isServer)
+        internal Connection(byte[] clientChosenDestinationId, string serverName, bool isServer)
         {
+            ServerName = serverName;
             IsServer = isServer;
             TLSConn = new TLS.ClientConnection(TLSSender.Reader, TLSReceiver.Writer, cancel);
         }

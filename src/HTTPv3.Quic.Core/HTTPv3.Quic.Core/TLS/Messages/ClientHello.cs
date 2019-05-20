@@ -107,7 +107,7 @@ namespace HTTPv3.Quic.TLS.Messages
                        .Write(Random)                              // random
                        .WriteTLSVariableLength(LegacySessionIdLength_NumBytes, LegacySessionId) // legacy_session_id
                        .Write(CipherSuites)                        // cipher_suites
-                       .Write(0x0);                                // legacy_compression_methods
+                       .Write(0x1).Write(0x0);                                // legacy_compression_methods
 
             var extLengthLoc = data;
             var startOfExt = data = data.Slice(ExtensionsLength_NumBytes);
@@ -166,14 +166,14 @@ namespace HTTPv3.Quic.TLS.Messages
                 });
             }
 
-            //if (TransportParameters != null)
-            //{
-            //    data = data.WriteExtension(ExtensionType.QuicTransportParameters, (buf, state) =>
-            //    {
-            //        buf = TransportParameters.Write(buf);
-            //        state.EndLength = buf.Length;
-            //    });
-            //}
+            if (TransportParameters != null)
+            {
+                data = data.WriteExtension(ExtensionType.QuicTransportParameters, (buf, state) =>
+                {
+                    //buf = TransportParameters.Write(buf);
+                    state.EndLength = buf.Length;
+                });
+            }
 
             if (PskKeyExchangeModes.Count > 0)
             {
@@ -183,6 +183,8 @@ namespace HTTPv3.Quic.TLS.Messages
                     state.EndLength = buf.Length;
                 });
             }
+
+            extLengthLoc.Write(startOfExt.Length - data.Length, ExtensionsLength_NumBytes);
 
             return data;
         }

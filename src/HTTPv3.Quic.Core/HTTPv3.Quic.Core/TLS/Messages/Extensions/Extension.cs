@@ -10,25 +10,19 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
         public const int Type_NumBytes = 2;
         public const int Length_NumBytes = 2;
 
+        public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, out ExtensionType type)
+        {
+            var ret = bytesIn.Read(Type_NumBytes, out ushort val);
+
+            type = ParseValue(val);
+
+            return ret;
+        }
+
         public static ReadOnlySpan<byte> ReadExtension(this in ReadOnlySpan<byte> bytesIn, out ExtensionType type, out ReadOnlySpan<byte> extBytes)
         {
             return bytesIn.Read(out type)
                           .ReadNextTLSVariableLength(Length_NumBytes, out extBytes);
-        }
-
-        public static Span<byte> WriteExtension(this Span<byte> buffer, ExtensionType type, SpanAction<byte, VectorState> action)
-        {
-            buffer = buffer.Write(type);
-
-            var state = new VectorState();
-            var data = buffer.Slice(Length_NumBytes);
-
-            action(data, state);
-
-            int bytesUsed = data.Length - state.EndLength;
-            buffer.Write(bytesUsed, Length_NumBytes);
-
-            return data.Slice(bytesUsed);
         }
 
         public static ExtensionType ParseValue(ushort value)
@@ -39,18 +33,14 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
             return ExtensionType.NA;
         }
 
-        public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, out ExtensionType type)
+        public static Span<byte> Write(this in Span<byte> buffer, ExtensionType type)
         {
-            var ret = bytesIn.Read(Type_NumBytes, out ushort val);
-
-            type = ParseValue(val);
-
-            return ret;
+            return buffer.Write((ushort)type, Type_NumBytes);
         }
 
-        public static Span<byte> Write(this in Span<byte> buffer, ExtensionType cs)
+        public static Span<byte> WriteExtension(this in Span<byte> buffer, ExtensionType type, SpanAction<byte, VectorState> action)
         {
-            return buffer.Write((ushort)cs, Type_NumBytes);
+            return buffer.Write(type).WriteVector(Length_NumBytes, action);
         }
     }
 
