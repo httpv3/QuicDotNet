@@ -146,5 +146,42 @@ namespace HTTPv3.Quic.Messages.Extensions
                     break;
             }
         }
+
+        public Span<byte> Write(Span<byte> buffer)
+        {
+            return buffer.WriteVector(ArrayLength_NumBytes, (buf, state) =>
+            {
+                if (OriginalConnectionId != null)
+                    buf = buf.WriteParameterValue(TransportParameterId.OriginalConnectionId, OriginalConnectionId.ConnectionIdBytes);
+
+                buf = buf.WriteParameterValue(TransportParameterId.IdleTimeout, IdleTimeoutMilliseconds);
+
+                if (StatelessResetToken != null)
+                    buf = buf.WriteParameterValue(TransportParameterId.StatelessResetToken, StatelessResetToken);
+
+                if (MaxPacketSize != 0)
+                    buf = buf.WriteParameterValue(TransportParameterId.MaxPacketSize, MaxPacketSize);
+
+                buf = buf.WriteParameterValue(TransportParameterId.InitialMaxData, InitialMaxData);
+                buf = buf.WriteParameterValue(TransportParameterId.InitialMaxStreamDataBidiLocal, InitialMaxStreamDataBidiLocal);
+                buf = buf.WriteParameterValue(TransportParameterId.InitialMaxStreamDataBidiRemote, InitialMaxStreamDataBidiRemote);
+                buf = buf.WriteParameterValue(TransportParameterId.InitialMaxStreamDataUni, InitialMaxStreamDataUni);
+                buf = buf.WriteParameterValue(TransportParameterId.InitialMaxStreamsBidi, InitialMaxStreamsBidi);
+                buf = buf.WriteParameterValue(TransportParameterId.InitialMaxStreamsUni, InitialMaxStreamsUni);
+                buf = buf.WriteParameterValue(TransportParameterId.AckDelayExponent, AckDelayExponent);
+                buf = buf.WriteParameterValue(TransportParameterId.MaxAckDelay, MaxAckDelayMilliseconds);
+
+                if (DisableMigration)
+                    buf = buf.WriteParameterValue(TransportParameterId.DisableMigration, (x,y) => { });
+
+                buf = buf.WriteParameterValue(TransportParameterId.PreferredAddress, (buf, state) =>
+                            {
+                                buf = PreferredAddress.Write(buf);
+                                state.EndLength = buf.Length;
+                            });
+
+                state.EndLength = buf.Length;
+            });
+        }
     }
 }

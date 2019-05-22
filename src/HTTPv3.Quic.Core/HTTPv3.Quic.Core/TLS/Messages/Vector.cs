@@ -16,6 +16,7 @@ namespace HTTPv3.Quic.TLS.Messages
         {
             var state = new VectorState();
             var data = buffer.Slice(vectorLen_numBytes);
+            state.EndLength = data.Length;
 
             action(data, state);
 

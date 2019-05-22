@@ -37,5 +37,16 @@ namespace HTTPv3.Quic.Messages.Extensions
             IPv6Port = ipv6Port;
             ConnectionId = connBytes.Length == 0 ? null : new ConnectionId(connBytes.ToArray());
         }
+
+        public Span<byte> Write(Span<byte> buffer)
+        {
+            return buffer.Write(IPv4Address)
+                         .Write(IPv4Port)
+                         .Write(IPv6Address)
+                         .Write(IPv6Port)
+                         .WriteTLSVariableLength(ConnectionIdLength_NumBytes, ConnectionId.ConnectionIdBytes)
+                         .Write(StatelessResetToken);
+
+        }
     }
 }

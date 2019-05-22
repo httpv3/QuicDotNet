@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ namespace HTTPv3.Quic.TLS.Messages
         public HandshakeType HandshakeType;
         public byte[] Data;
 
-        public static async IAsyncEnumerable<RawRecord> ReadRecords(PipeReader reader, CancellationToken cancel)
+        public static async IAsyncEnumerable<RawRecord> ReadRecords(PipeReader reader, [EnumeratorCancellation] CancellationToken cancel)
         {
             while (!cancel.IsCancellationRequested)
             {

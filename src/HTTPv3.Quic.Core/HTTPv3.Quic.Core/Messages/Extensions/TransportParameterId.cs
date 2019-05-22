@@ -34,6 +34,7 @@ namespace HTTPv3.Quic.Messages.Extensions
     internal static class TransportParameterIdExtensions
     {
         public const int Type_NumBytes = 2;
+        public const int Array_NumBytes = 2;
 
         public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, out TransportParameterId type)
         {
@@ -57,15 +58,29 @@ namespace HTTPv3.Quic.Messages.Extensions
             return buffer.Write((ushort)type, Type_NumBytes);
         }
 
+        public static Span<byte> WriteParameterValue(this in Span<byte> buffer, TransportParameterId type, byte[] value)
+        {
+            return buffer.Write(type)
+                         .WriteVector(Array_NumBytes, (buf, state) =>
+                         {
+                             buf = buf.Write(value);
+                             state.EndLength = buf.Length;
+                         });
+        }
+
         public static Span<byte> WriteParameterValue(this in Span<byte> buffer, TransportParameterId type, ulong value)
         {
             return buffer.Write(type)
-                         .WriteVector(1, (buf, state) =>
+                         .WriteVector(Array_NumBytes, (buf, state) =>
                          {
                              buf = buf.WriteVarLengthInt(value);
                              state.EndLength = buf.Length;
                          });
         }
 
+        public static Span<byte> WriteParameterValue(this in Span<byte> buffer, TransportParameterId type, SpanAction<byte, VectorState> action)
+        {
+            return buffer.Write(type).WriteVector(Array_NumBytes, action);
+        }
     }
 }

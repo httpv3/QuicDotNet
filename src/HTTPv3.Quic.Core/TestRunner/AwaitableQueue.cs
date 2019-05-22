@@ -33,6 +33,7 @@ namespace TestRunner
 
         async ValueTask IAsyncDisposable.DisposeAsync()
         {
+            await Task.Delay(1);
             tsc.SetResult(false);
         }
 

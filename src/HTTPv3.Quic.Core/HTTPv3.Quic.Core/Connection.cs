@@ -44,6 +44,8 @@ namespace HTTPv3.Quic
 
         internal async Task SendConnect()
         {
+            await Task.Delay(1);
+
             var buffer = new byte[1500];
 
             TLSConn.WriteClientHello(buffer, ServerName);
