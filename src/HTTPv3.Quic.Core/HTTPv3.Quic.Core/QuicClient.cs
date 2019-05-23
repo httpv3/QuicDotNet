@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO.Pipelines;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +12,6 @@ namespace HTTPv3.Quic
 
         public QuicClient(string serverName, short port)
         {
-            var addresses = new[] { new IPAddress(0) }; // Dns.GetHostAddresses(serverName);
             var serverConn = ServerConnectionId.Generate();
 
             conn = new Connection(serverConn.ConnectionIdBytes, serverName, false)
@@ -19,8 +19,13 @@ namespace HTTPv3.Quic
                 ClientConnectionId = ClientConnectionId.Generate(),
                 ServerConnectionId = serverConn,
                 IsServer = false,
-                RemoteEndPoint = new IPEndPoint(addresses[0], port)
             };
+
+            var addresses = Dns.GetHostAddresses(serverName);
+            var remoteEndPoint = new IPEndPoint(addresses[0], port);
+
+            //Pipe p = new Pipe();
+            //p.Reader.
         }
 
         public async Task<ConnectionState> Connect()

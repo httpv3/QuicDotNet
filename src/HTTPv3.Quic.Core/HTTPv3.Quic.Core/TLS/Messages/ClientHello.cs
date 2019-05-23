@@ -176,7 +176,7 @@ namespace HTTPv3.Quic.TLS.Messages
             {
                 data = data.WriteExtension(ExtensionType.QuicTransportParameters, (buf, state) =>
                 {
-                    //buf = TransportParameters.Write(buf);
+                    buf = TransportParameters.Write(buf);
                     state.EndLength = buf.Length;
                 });
             }

@@ -9,8 +9,18 @@ namespace HTTPv3.Quic.Messages.Extensions
     // Figure 16: Preferred Address format
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-18.1
 
-    public struct PreferredAddress
+    public class PreferredAddress
     {
+        public readonly static PreferredAddress Default = new PreferredAddress()
+        {
+            IPv4Address = new byte[] { 0, 0, 0, 0 },
+            IPv6Address = new byte[] { 0, 0, 0, 0, 0, 0 },
+            IPv4Port = 0,
+            IPv6Port = 0,
+            ConnectionId = ConnectionId.Empty,
+            StatelessResetToken = new byte[0],
+        };
+
         public const int IPv4Address_NumBytes = 4;
         public const int IPv6Address_NumBytes = 16;
         public const int Port_NumBytes = 2;
@@ -24,18 +34,24 @@ namespace HTTPv3.Quic.Messages.Extensions
         ConnectionId ConnectionId;
         byte[] StatelessResetToken;
 
-        public PreferredAddress(ReadOnlySpan<byte> bytes)
+        public PreferredAddress()
         {
-            bytes.Read(IPv4Address_NumBytes, out IPv4Address)
-                 .Read(Port_NumBytes, out ushort ipv4Port)
-                 .Read(IPv6Address_NumBytes, out IPv6Address)
-                 .Read(Port_NumBytes, out ushort ipv6Port)
-                 .ReadNextTLSVariableLength(ConnectionIdLength_NumBytes, out var connBytes)
-                 .Read(StatelessResetToken_NumBytes, out StatelessResetToken);
+        }
 
-            IPv4Port = ipv4Port;
-            IPv6Port = ipv6Port;
-            ConnectionId = connBytes.Length == 0 ? null : new ConnectionId(connBytes.ToArray());
+        public static PreferredAddress Parse(ReadOnlySpan<byte> bytes)
+        {
+            PreferredAddress ret = new PreferredAddress();
+
+            bytes.Read(IPv4Address_NumBytes, out ret.IPv4Address)
+                 .Read(Port_NumBytes, out ret.IPv4Port)
+                 .Read(IPv6Address_NumBytes, out ret.IPv6Address)
+                 .Read(Port_NumBytes, out ret.IPv6Port)
+                 .ReadNextTLSVariableLength(ConnectionIdLength_NumBytes, out var connBytes)
+                 .Read(StatelessResetToken_NumBytes, out ret.StatelessResetToken);
+
+            ret.ConnectionId = connBytes.Length == 0 ? ConnectionId.Empty : new ConnectionId(connBytes.ToArray());
+                
+            return ret;
         }
 
         public Span<byte> Write(Span<byte> buffer)

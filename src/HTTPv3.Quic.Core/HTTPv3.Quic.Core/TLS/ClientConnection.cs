@@ -48,7 +48,7 @@ namespace HTTPv3.Quic.TLS
             }
         }
 
-        internal void WriteClientHello(Span<byte> buffer, string serverName)
+        internal Span<byte> WriteClientHello(in Span<byte> buffer, string serverName)
         {
             var hello = new ClientHello()
             {
@@ -65,7 +65,7 @@ namespace HTTPv3.Quic.TLS
 
             hello.KeyShares.Add(CreateKeyShare());
 
-            hello.Write(buffer);
+            return hello.Write(buffer);
         }
 
         private KeyShare CreateKeyShare()

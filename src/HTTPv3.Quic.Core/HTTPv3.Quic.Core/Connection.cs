@@ -13,6 +13,8 @@ namespace HTTPv3.Quic
 {
     public class Connection
     {
+        private const int MINIMUM_INITIAL_MESSAGE_SIZE = 1200;
+
         public CancellationToken cancel = new CancellationToken();
 
         public ConnectionState ConnectionState { get; private set; } = ConnectionState.NotConnected;
@@ -48,7 +50,22 @@ namespace HTTPv3.Quic
 
             var buffer = new byte[1500];
 
-            TLSConn.WriteClientHello(buffer, ServerName);
+            WriteConnect(buffer, out int len);
+
+
+        }
+
+        internal void WriteConnect(in Span<byte> buffer, out int length)
+        {
+            var curSpan = TLSConn.WriteClientHello(buffer, ServerName);
+
+            length = buffer.Length - curSpan.Length;
+
+            if (length > MINIMUM_INITIAL_MESSAGE_SIZE) //No Padding needed.
+                return;
+
+            buffer.PadToLength(length, MINIMUM_INITIAL_MESSAGE_SIZE);
+            length = MINIMUM_INITIAL_MESSAGE_SIZE;
         }
     }
 }

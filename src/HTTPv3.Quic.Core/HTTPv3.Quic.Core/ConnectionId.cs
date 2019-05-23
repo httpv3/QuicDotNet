@@ -7,6 +7,8 @@ namespace HTTPv3.Quic
 {
     public class ConnectionId
     {
+        public readonly static ConnectionId Empty = new ConnectionId(new byte[0]);
+
         public const int DefaultLength = 4;
         private static SecureRandom prng = new SecureRandom();
         private static IFNV1 Hasher = FNV1Factory.Instance.Create(FNVConfig.GetPredefinedConfig(32));
@@ -16,7 +18,11 @@ namespace HTTPv3.Quic
         public ConnectionId(byte[] connectionIdBytes)
         {
             ConnectionIdBytes = connectionIdBytes;
-            HashCode = Hasher.ComputeHash(connectionIdBytes).Hash.ToInt32(true);
+
+            if (ConnectionIdBytes.Length == 0)
+                HashCode = 0;
+            else
+                HashCode = Hasher.ComputeHash(connectionIdBytes).Hash.ToInt32(true);
         }
 
         protected static byte[] GenerateBytes(int length = DefaultLength)
@@ -31,6 +37,11 @@ namespace HTTPv3.Quic
 
         public override bool Equals(object obj)
         {
+            if (ReferenceEquals(this, Empty))
+                return ReferenceEquals(obj, Empty);
+            if (ReferenceEquals(obj, Empty))
+                return ReferenceEquals(this, Empty);
+
             if (ReferenceEquals(this, obj)) return true;
             if (ReferenceEquals(ConnectionIdBytes, obj)) return true;
 

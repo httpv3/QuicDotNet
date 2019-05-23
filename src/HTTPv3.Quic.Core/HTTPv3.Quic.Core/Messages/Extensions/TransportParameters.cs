@@ -19,7 +19,16 @@ namespace HTTPv3.Quic.Messages.Extensions
         public const int NamedGroupLength_NumBytes = 2;
         public const int StatelessResetToken_NumBytes = 16;
 
-        public static readonly TransportParameters Default = new TransportParameters();
+        public static readonly TransportParameters Default = new TransportParameters()
+        {
+            InitialMaxStreamDataBidiLocal = 16384,
+            InitialMaxStreamDataUni = 16384,
+            InitialMaxData = 32768,
+            InitialMaxStreamsBidi = 1,
+            InitialMaxStreamsUni = 1,
+            IdleTimeoutMilliseconds = 10000,
+            PreferredAddress = PreferredAddress.Default,
+        };
 
         public VersionTypes InitialVersion;
         public VersionTypes NegotiatedVersion;
@@ -140,7 +149,7 @@ namespace HTTPv3.Quic.Messages.Extensions
                     DisableMigration = true;
                     break;
                 case TransportParameterId.PreferredAddress:
-                    PreferredAddress = new PreferredAddress(extBytes);
+                    PreferredAddress = PreferredAddress.Parse(extBytes);
                     break;
                 default:
                     break;
@@ -174,11 +183,12 @@ namespace HTTPv3.Quic.Messages.Extensions
                 if (DisableMigration)
                     buf = buf.WriteParameterValue(TransportParameterId.DisableMigration, (x,y) => { });
 
-                buf = buf.WriteParameterValue(TransportParameterId.PreferredAddress, (buf, state) =>
-                            {
-                                buf = PreferredAddress.Write(buf);
-                                state.EndLength = buf.Length;
-                            });
+                if (PreferredAddress != null)
+                    buf = buf.WriteParameterValue(TransportParameterId.PreferredAddress, (buf, state) =>
+                                {
+                                    buf = PreferredAddress.Write(buf);
+                                    state.EndLength = buf.Length;
+                                });
 
                 state.EndLength = buf.Length;
             });
