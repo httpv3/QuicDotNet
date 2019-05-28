@@ -194,10 +194,8 @@ namespace HTTPv3.Quic.Messages.Common
         {
             var bytes = "9d 7f 3e 7d".ToByteArrayFromHex();
             int expected = 494878333;
-            int actual;
-            int bytesUsed;
 
-            VariableLengthInt.ReadOne(bytes, out actual, out bytesUsed);
+            VariableLengthInt.ReadOne(bytes, out int actual, out int bytesUsed);
 
             Assert.AreEqual(expected, actual);
             Assert.AreEqual(bytes.Length, bytesUsed);
