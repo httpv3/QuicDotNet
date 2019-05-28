@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace HTTPv3.Quic.TLS
+namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
     [TestClass]
     public class CipherSuiteTests

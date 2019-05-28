@@ -73,6 +73,18 @@ namespace HTTPv3.Quic
             return bytesIn.Slice(bytesUsed);
         }
 
+        public static Span<byte> Subtract(this in Span<byte> first, in Span<byte> second)
+        {
+            if (first.Length == 0) return first;
+            if (second.Length == 0) return first;
+
+            if (!first.Overlaps(second)) throw new DoesntOverlapException("SpanExtensions.Subtract: Spans do not overlap.");
+
+            if (first.Length < second.Length) throw new NotEnoughBytesException($"SpanExtensions.Subtract: First smaller than second. {first.Length} < {second.Length}");
+
+            return first.Slice(0, first.Length - second.Length);
+        }
+
         public static uint ToUInt32(this in Span<byte> span, in bool isNetworkByteOrder = true)
         {
             int len = span.Length;

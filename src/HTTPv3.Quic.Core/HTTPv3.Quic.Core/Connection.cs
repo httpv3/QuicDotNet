@@ -57,7 +57,9 @@ namespace HTTPv3.Quic
 
         internal void WriteConnect(in Span<byte> buffer, out int length)
         {
-            var curSpan = TLSConn.WriteClientHello(buffer, ServerName);
+            
+
+            var curSpan = TLSConn.WriteClientHello(buffer, ServerName, TransportParameters.Default.ToUnknownExtension());
 
             length = buffer.Length - curSpan.Length;
 

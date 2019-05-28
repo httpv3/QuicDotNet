@@ -32,7 +32,7 @@ namespace HTTPv3.Quic.TLS.Messages
         public List<KeyShare> KeyShares = new List<KeyShare>();
         public List<PskKeyExchangeMode> PskKeyExchangeModes = new List<PskKeyExchangeMode>();
         public List<string> ALPN = new List<string>();
-        public TransportParameters TransportParameters;
+        public List<UnknownExtension> UnknownExtensions = new List<UnknownExtension>();
 
         public ClientHello() : base(HandshakeType.ClientHello)
         {
@@ -88,10 +88,15 @@ namespace HTTPv3.Quic.TLS.Messages
                 case ExtensionType.ApplicationLayerProtocolNegotiation:
                     extBytes.ReadALPN(ALPN);
                     break;
-                case ExtensionType.QuicTransportParameters:
-                    TransportParameters = TransportParameters.Parse(extBytes, HandshakeType.ClientHello);
-                    break;
                 default:
+                    extBytes = extBytes.ReadNextTLSVariableLength(UnknownExtension.ArrayLength_NumBytes, out var bytes);
+
+                    UnknownExtensions.Add(new UnknownExtension()
+                    {
+                        ExtensionType = (ushort)type,
+                        Bytes = bytes.ToArray(),
+                    });
+
                     break;
             }
         }
@@ -172,15 +177,6 @@ namespace HTTPv3.Quic.TLS.Messages
                 });
             }
 
-            if (TransportParameters != null)
-            {
-                data = data.WriteExtension(ExtensionType.QuicTransportParameters, (buf, state) =>
-                {
-                    buf = TransportParameters.Write(buf);
-                    state.EndLength = buf.Length;
-                });
-            }
-
             if (PskKeyExchangeModes.Count > 0)
             {
                 data = data.WriteExtension(ExtensionType.PskKeyExchangeModes, (buf, state) =>
@@ -189,6 +185,14 @@ namespace HTTPv3.Quic.TLS.Messages
                     state.EndLength = buf.Length;
                 });
             }
+
+            foreach (var ext in UnknownExtensions)
+                data = data.WriteExtension(ext.ExtensionType, (buf, state) =>
+                {
+                    buf = buf.Write(ext.ExtensionType)
+                             .Write(ext.Bytes);
+                    state.EndLength = buf.Length;
+                });
 
             return data;
         }

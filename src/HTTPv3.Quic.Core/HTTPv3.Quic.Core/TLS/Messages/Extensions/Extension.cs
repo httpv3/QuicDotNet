@@ -29,7 +29,6 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
         PostHandshakeAuth = 49,
         SignatureAlgorithmsCert = 50,
         KeyShare = 51,
-        QuicTransportParameters = 0xffa5,
 
         NA = 0xff,
     }
@@ -68,6 +67,11 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
         }
 
         public static Span<byte> WriteExtension(this in Span<byte> buffer, ExtensionType type, SpanAction<byte, VectorState> action)
+        {
+            return buffer.Write(type).WriteVector(Length_NumBytes, action);
+        }
+
+        public static Span<byte> WriteExtension(this in Span<byte> buffer, ushort type, SpanAction<byte, VectorState> action)
         {
             return buffer.Write(type).WriteVector(Length_NumBytes, action);
         }

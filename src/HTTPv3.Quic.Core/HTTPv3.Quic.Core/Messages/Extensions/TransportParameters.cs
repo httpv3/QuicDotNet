@@ -13,6 +13,7 @@ namespace HTTPv3.Quic.Messages.Extensions
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-18.1
     internal class TransportParameters
     {
+        public const ushort ExtensionTypeId = 0xffa5;
         public const int Type_NumBytes = 2;
         public const int ArrayLength_NumBytes = 2;
         public const int SupportedVersionsArrayLength_NumBytes = 1;
@@ -85,12 +86,13 @@ namespace HTTPv3.Quic.Messages.Extensions
 
         }
 
-        public static TransportParameters Parse(ReadOnlySpan<byte> data, HandshakeType handshakeType)
+        public static TransportParameters Parse(UnknownExtension ext)
         {
             TransportParameters ret = new TransportParameters();
 
-            data = data.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+            ReadOnlySpan<byte> data = ext.Bytes;
 
+            data.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
 
             while (!arrData.IsEmpty)
             {
@@ -98,6 +100,18 @@ namespace HTTPv3.Quic.Messages.Extensions
             }
 
             return ret;
+        }
+
+        public UnknownExtension ToUnknownExtension()
+        {
+            Span<byte> before = new byte[1000];
+            var after = Write(before);
+
+            return new UnknownExtension()
+            {
+                ExtensionType = ExtensionTypeId,
+                Bytes = before.Subtract(after).ToArray(),
+            };
         }
 
         private void ParseParameter(ref ReadOnlySpan<byte> data)

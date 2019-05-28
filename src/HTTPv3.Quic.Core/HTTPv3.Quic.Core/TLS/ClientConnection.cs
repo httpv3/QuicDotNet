@@ -48,12 +48,11 @@ namespace HTTPv3.Quic.TLS
             }
         }
 
-        internal Span<byte> WriteClientHello(in Span<byte> buffer, string serverName)
+        internal Span<byte> WriteClientHello(in Span<byte> buffer, string serverName, params UnknownExtension[] unknownExtensions)
         {
             var hello = new ClientHello()
             {
                 ServerName = serverName,
-                TransportParameters = TransportParameters.Default
             };
 
             hello.CipherSuites.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
@@ -62,6 +61,7 @@ namespace HTTPv3.Quic.TLS
             hello.SupportedGroups.Add(NamedGroup.secp256r1);
             hello.SignatureAlgorithms.Add(SignatureScheme.ecdsa_secp256r1_sha256);
             hello.PskKeyExchangeModes.Add(PskKeyExchangeMode.PSKwithDheKeyEstablishment);
+            hello.UnknownExtensions.AddRange(unknownExtensions);
 
             hello.KeyShares.Add(CreateKeyShare());
 
