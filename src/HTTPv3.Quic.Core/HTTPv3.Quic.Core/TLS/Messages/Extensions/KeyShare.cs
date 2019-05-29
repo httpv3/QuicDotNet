@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HTTPv3.Quic.TLS.Messages.Extensions
 {
@@ -7,6 +8,19 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
     {
         public NamedGroup Group;
         public byte[] KeyExchange;
+
+        public override bool Equals(object obj)
+        {
+            var k = obj as KeyShare;
+            if (k == null) return false;
+
+            return Group.Equals(k.Group) && KeyExchange.SequenceEqual(k.KeyExchange);
+        }
+
+        public override int GetHashCode()
+        {
+            return Group.GetHashCode() + KeyExchange.GetHashCode();
+        }
     }
 
     internal static class KeyShareExtensions
