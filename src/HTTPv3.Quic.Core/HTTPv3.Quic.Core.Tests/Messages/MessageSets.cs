@@ -25,9 +25,6 @@ namespace HTTPv3.Quic.Messages
         public ClientConnectionId ClientId;
         public ServerConnectionId ServerId;
 
-        public ApplicationKeys[] ClientApplicationKeys;
-        public ApplicationKeys[] ServerApplicationKeys;
-
         public Connection ClientConnection;
         public Connection ServerConnection;
 
@@ -82,26 +79,14 @@ namespace HTTPv3.Quic.Messages
 
             if (secrets.Handshake != null)
             {
-                ClientConnection.HandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, false);
-                ServerConnection.HandshakeKeys = new HandshakeKeys(secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite, true);
+                ClientConnection.KeyManager.Add(EncryptionState.Handshake, secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite);
+                ServerConnection.KeyManager.Add(EncryptionState.Handshake, secrets.Handshake.Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite);
             }
 
             if (secrets.Application != null)
             {
-                List<ApplicationKeys> cKeys = new List<ApplicationKeys>();
-                List<ApplicationKeys> sKeys = new List<ApplicationKeys>();
-
-                foreach (var app in secrets.Application)
-                {
-                    cKeys.Add(new ApplicationKeys(app.Client.ToByteArrayFromHex().ToArray(), app.Server.ToByteArrayFromHex().ToArray(), app.CipherSuite, false));
-                    sKeys.Add(new ApplicationKeys(app.Client.ToByteArrayFromHex().ToArray(), app.Server.ToByteArrayFromHex().ToArray(), app.CipherSuite, true));
-                }
-
-                ClientApplicationKeys = cKeys.ToArray();
-                ServerApplicationKeys = sKeys.ToArray();
-
-                ClientConnection.ApplicationKeys = ClientApplicationKeys[0];
-                ServerConnection.ApplicationKeys = ServerApplicationKeys[0];
+                ClientConnection.KeyManager.Add(EncryptionState.Application, secrets.Application[0].Client.ToByteArrayFromHex().ToArray(), secrets.Application[0].Server.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite);
+                ServerConnection.KeyManager.Add(EncryptionState.Application, secrets.Application[0].Server.ToByteArrayFromHex().ToArray(), secrets.Application[0].Client.ToByteArrayFromHex().ToArray(), secrets.Handshake.CipherSuite);
             }
         }
 

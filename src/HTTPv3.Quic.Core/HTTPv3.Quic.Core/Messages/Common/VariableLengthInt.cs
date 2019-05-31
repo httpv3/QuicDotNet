@@ -57,7 +57,7 @@ namespace HTTPv3.Quic.Messages.Common
 
             value = bytes[0] & ClearLengthMask;
 
-            for(int i = 1; i < bytesUsed; i++)
+            for (int i = 1; i < bytesUsed; i++)
             {
                 value <<= 8;
                 value += bytes[i];
@@ -98,6 +98,10 @@ namespace HTTPv3.Quic.Messages.Common
             return numBytes;
         }
 
+        public static Span<byte> WriteVarLengthInt(this in Span<byte> bytes, int value)
+        {
+            return bytes.WriteVarLengthInt((ulong)value);
+        }
         public static Span<byte> WriteVarLengthInt(this in Span<byte> bytes, ulong value)
         {
             if (value > Max8Byte) throw new ArithmeticException($"VariableLengthInt.Write: Value {value} too large to encode.");

@@ -35,7 +35,7 @@ namespace HTTPv3.Quic.Security
         public readonly IBufferedCipher Encryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
         public readonly IBufferedCipher Decryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
 
-        public EncryptionKeys(in byte[] encryptionSecret, in byte[] decryptionSecret, CipherSuite cipherSuite)
+        protected EncryptionKeys(in byte[] encSecret, in byte[] decSecret, CipherSuite cipherSuite)
         {
             AronParker.Hkdf.Hkdf hkdf;
             ushort keySize;
@@ -55,13 +55,13 @@ namespace HTTPv3.Quic.Security
             }
 
 
-            EncryptionKey = ExpandLabel(hkdf, encryptionSecret, keySize, QuicKey);
-            EncryptionIV = ExpandLabel(hkdf, encryptionSecret, 12, QuicIV);
-            EncryptionHP = ExpandLabel(hkdf, encryptionSecret, keySize, QuicHP);
+            EncryptionKey = ExpandLabel(hkdf, encSecret, keySize, QuicKey);
+            EncryptionIV = ExpandLabel(hkdf, encSecret, 12, QuicIV);
+            EncryptionHP = ExpandLabel(hkdf, encSecret, keySize, QuicHP);
 
-            DecryptionKey = ExpandLabel(hkdf, decryptionSecret, keySize, QuicKey);
-            DecryptionIV = ExpandLabel(hkdf, decryptionSecret, 12, QuicIV);
-            DecryptionHP = ExpandLabel(hkdf, decryptionSecret, keySize, QuicHP);
+            DecryptionKey = ExpandLabel(hkdf, decSecret, keySize, QuicKey);
+            DecryptionIV = ExpandLabel(hkdf, decSecret, 12, QuicIV);
+            DecryptionHP = ExpandLabel(hkdf, decSecret, keySize, QuicHP);
 
             Encryption_AES_ECB.Init(true, new KeyParameter(EncryptionHP));
             Decryption_AES_ECB.Init(true, new KeyParameter(DecryptionHP));

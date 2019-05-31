@@ -17,12 +17,11 @@ namespace HTTPv3.Quic.Messages.Frames
         public ConnectionCloseQuicFrame(ref Packet p)
         {
             p.PayloadCursor = p.PayloadCursor.Read(ErrorCode_NumBytes, out ushort errorCodeNum)
-                                             .ReadNextVariableInt(out ulong frameType)
+                                             .Read(out FrameType)
                                              .ReadNextVariableInt(out int reasonLength)
                                              .Read(reasonLength, out byte[] reasonBytes);
 
             ErrorCode = ConnectionCloseAppFrame.ParseErrorCode(errorCodeNum);
-            FrameType = FrameTypes.Parse((byte)frameType);
             Reason = Encoding.UTF8.GetString(reasonBytes);
         }
     }

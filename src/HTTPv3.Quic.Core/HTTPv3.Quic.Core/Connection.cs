@@ -1,4 +1,5 @@
 ﻿using HTTPv3.Quic.Messages.Extensions;
+using HTTPv3.Quic.Messages.Frames;
 using HTTPv3.Quic.Security;
 using HTTPv3.Quic.TLS;
 using System;
@@ -13,9 +14,9 @@ namespace HTTPv3.Quic
 {
     public class Connection
     {
-        private const int MINIMUM_INITIAL_MESSAGE_SIZE = 1200;
+        private const int MINIMUM_INITIAL_PAYLOAD_SIZE = 1180;
 
-        public CancellationToken cancel = new CancellationToken();
+        public CancellationToken cancel;
 
         public ConnectionState ConnectionState { get; private set; } = ConnectionState.NotConnected;
 
@@ -24,9 +25,9 @@ namespace HTTPv3.Quic
         public IPEndPoint RemoteEndPoint;
         public string ServerName;
 
-        internal ApplicationKeys ApplicationKeys;
-        internal HandshakeKeys HandshakeKeys;
-        internal InitialKeys InitialKeys;
+        public Func<byte[], int, ValueTask> Sender;
+
+        internal KeyManager KeyManager;
 
         internal TLS.ClientConnection TLSConn;
 
@@ -37,37 +38,53 @@ namespace HTTPv3.Quic
         private Pipe TLSSender = new Pipe();
         private Pipe TLSReceiver = new Pipe();
 
-        internal Connection(byte[] clientChosenDestinationId, string serverName, bool isServer)
+        private Task tlsReaderTask;
+
+        internal Connection(byte[] clientChosenDestinationId, string serverName, bool isServer, CancellationToken cancel = default)
         {
+            this.cancel = cancel;
             ServerName = serverName;
             IsServer = isServer;
+
+            KeyManager = new KeyManager(clientChosenDestinationId, isServer);
+
             TLSConn = new TLS.ClientConnection(TLSSender.Reader, TLSReceiver.Writer, cancel);
+
+            tlsReaderTask = StartReadingFromTLS();
         }
 
         internal async Task SendConnect()
         {
-            await Task.Delay(1);
-
             var buffer = new byte[1500];
 
             WriteConnect(buffer, out int len);
 
-
+            await Sender(buffer, len);
         }
 
         internal void WriteConnect(in Span<byte> buffer, out int length)
         {
-            
+            var temp = new byte[1500];
+            var after = TLSConn.WriteClientHello(temp, ServerName, TransportParameters.Default.ToUnknownExtension());
+            var frameData = temp.AsSpan(0, temp.Length - after.Length);
+            CryptoFrame frame = new CryptoFrame(0, frameData.ToArray());
 
-            var curSpan = TLSConn.WriteClientHello(buffer, ServerName, TransportParameters.Default.ToUnknownExtension());
-
+            var curSpan = frame.Write(buffer);
             length = buffer.Length - curSpan.Length;
 
-            if (length > MINIMUM_INITIAL_MESSAGE_SIZE) //No Padding needed.
+            if (length > MINIMUM_INITIAL_PAYLOAD_SIZE) //No Padding needed.
                 return;
 
-            buffer.PadToLength(length, MINIMUM_INITIAL_MESSAGE_SIZE);
-            length = MINIMUM_INITIAL_MESSAGE_SIZE;
+            buffer.PadToLength(length, MINIMUM_INITIAL_PAYLOAD_SIZE);
+            length = MINIMUM_INITIAL_PAYLOAD_SIZE;
+        }
+
+        private async Task StartReadingFromTLS()
+        {
+            //await foreach (var r in RawRecord.ReadRecords(reader, cancel))
+            //{
+            //    var msg = Handshake.Parse(r);
+            //}
         }
     }
 }

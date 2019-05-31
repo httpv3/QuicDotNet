@@ -4,19 +4,7 @@ using System.Text;
 
 namespace HTTPv3.Quic.Messages.Frames
 {
-    public class FrameTypes
-    {
-        public static FrameType Parse(byte value)
-        {
-            if (Enum.IsDefined(typeof(FrameType), value))
-                return (FrameType)Enum.ToObject(typeof(FrameType), value);
-
-            return FrameType.Unknown;
-
-        }
-    }
-
-    public enum FrameType : byte
+    internal enum FrameType : byte
     {
         Padding = 0x00,
         Ping = 0x01,
@@ -42,5 +30,30 @@ namespace HTTPv3.Quic.Messages.Frames
         ConnectionCloseApplication = 0x1d,
 
         Unknown = 0xFF,
+    }
+
+    internal static class FrameTypeExtensions
+    {
+        public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, out FrameType type)
+        {
+            var ret = bytesIn.Read(out byte val);
+
+            type = ParseValue(val);
+
+            return ret;
+        }
+
+        public static FrameType ParseValue(byte value)
+        {
+            if (Enum.IsDefined(typeof(FrameType), value))
+                return (FrameType)value;
+
+            return FrameType.Unknown;
+        }
+
+        public static Span<byte> Write(this in Span<byte> buffer, FrameType type)
+        {
+            return buffer.Write((byte)type);
+        }
     }
 }

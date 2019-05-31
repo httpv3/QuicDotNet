@@ -6,22 +6,10 @@ namespace HTTPv3.Quic.Security
     // IETF quic-transport draft-19
     // 5.  Packet Protection
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-5
-    internal class ApplicationKeys
+    internal class ApplicationKeys : EncryptionKeys
     {
-        public readonly byte[] ClientInitialSecret;
-        public readonly byte[] ServerInitialSecret;
-
-        public readonly EncryptionKeys EncryptionKeys;
-
-        public ApplicationKeys(byte[] clientHandshakeSecret, byte[] serverHandshakeSecret, CipherSuite cipherSuite, bool isServer)
+        public ApplicationKeys(in byte[] encSecret, in byte[] decSecret, CipherSuite cipherSuite) : base(encSecret, decSecret, cipherSuite)
         {
-            ClientInitialSecret = clientHandshakeSecret;
-            ServerInitialSecret = serverHandshakeSecret;
-
-            if (isServer)
-                EncryptionKeys = new EncryptionKeys(ServerInitialSecret, ClientInitialSecret, cipherSuite);
-            else
-                EncryptionKeys = new EncryptionKeys(ClientInitialSecret, ServerInitialSecret, cipherSuite);
         }
     }
 }

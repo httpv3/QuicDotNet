@@ -66,7 +66,7 @@ namespace HTTPv3.Quic.Messages.Common
                         p.LongHeader.RemoveHeaderProtection(ref p);
                         p.Initial.RemoveHeaderProtection(ref p);
 
-                        p.DecryptPayLoad(p.Connection.InitialKeys.EncryptionKeys);
+                        p.DecryptPayLoad(p.Connection.KeyManager.Initial);
                         break;
                     case LongHeaderPacketTypes.Handshake:
                         p.Handshake = new Handshake(ref p);
@@ -75,7 +75,7 @@ namespace HTTPv3.Quic.Messages.Common
                         p.LongHeader.RemoveHeaderProtection(ref p);
                         p.Handshake.RemoveHeaderProtection(ref p);
 
-                        p.DecryptPayLoad(p.Connection.HandshakeKeys.EncryptionKeys);
+                        p.DecryptPayLoad(p.Connection.KeyManager.Handshake);
                         break;
                 }
             }
@@ -90,7 +90,7 @@ namespace HTTPv3.Quic.Messages.Common
                 p.HeaderProtectionMask = p.ShortHeader.ComputeDecryptionHeaderProtectionMask(ref p);
                 p.ShortHeader.RemoveHeaderProtection(ref p);
 
-                p.DecryptPayLoad(p.Connection.ApplicationKeys.EncryptionKeys);
+                p.DecryptPayLoad(p.Connection.KeyManager.Application);
             }
 
             return p;
@@ -109,9 +109,7 @@ namespace HTTPv3.Quic.Messages.Common
             if (PayloadCursor == null || PayloadCursor.Length == 0)
                 return null;
 
-            PayloadCursor = PayloadCursor.Read(out var frameByte);
-
-            var frameType = FrameTypes.Parse(frameByte);
+            PayloadCursor = PayloadCursor.Read(out FrameType frameType);
 
             switch (frameType)
             {
@@ -122,7 +120,7 @@ namespace HTTPv3.Quic.Messages.Common
                 case FrameType.ConnectionCloseQuic:
                     return new ConnectionCloseQuicFrame(ref this);
                 case FrameType.Crypto:
-                    return new CryptoFrame(ref this);
+                    return CryptoFrame.Parse(ref PayloadCursor);
                 case FrameType.NewConnectionId:
                     return new NewConnectionIdFrame(ref this);
                 default:
