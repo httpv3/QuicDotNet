@@ -8,10 +8,31 @@ namespace TestRunner
 {
     class Program
     {
+        static AwaitableQueue<char> q = new AwaitableQueue<char>();
+
         static async Task Main(string[] args)
         {
-            await Run();
+            EchoTest();
+            //await Run();
+
+            while(true)
+            {
+                var k = Console.ReadKey(true);
+                q.Add('*');
+                q.Add(k.KeyChar);
+                q.Add('*');
+                await Task.Delay(1000);
+            }
         }
+
+        private static async Task EchoTest()
+        {
+            await foreach (var c in q)
+            {
+                Console.Write(c);
+            }
+        }
+
         async static Task Run()
         {
             QuicClient client = new QuicClient("quic.ogre.com", 4433);

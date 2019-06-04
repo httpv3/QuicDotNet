@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -8,32 +9,28 @@ namespace TestRunner
 {
     class AwaitableQueue<T> : IAsyncEnumerable<T>, IAsyncEnumerator<T>
     {
-        Queue<T> q = new Queue<T>(new [] { default(T) });
+        Queue<T> q = new Queue<T>();
         TaskCompletionSource<bool> tsc = null;
 
-        public T Current
-        {
-            get
-            {
-                if (q.Count > 0)
-                    return q.Peek();
-                return default(T);
-            }
-        }
+        public T Current { get; private set; } = default(T);
 
         public void Add(T item)
         {
-            q.Enqueue(item);
+            lock (q)
+            {
+                q.Enqueue(item);
 
-            if (tsc != null)
-                tsc.SetResult(true);
-            else
-                tsc = null;
+                if (tsc != null && !tsc.Task.IsCompleted)
+                {
+                    tsc.SetResult(true);
+                    tsc = null;
+                }
+            }
         }
 
         async ValueTask IAsyncDisposable.DisposeAsync()
         {
-            await Task.Delay(1);
+            await Task.Delay(0);
             tsc.SetResult(false);
         }
 
@@ -44,14 +41,18 @@ namespace TestRunner
 
         ValueTask<bool> IAsyncEnumerator<T>.MoveNextAsync()
         {
-            if (q.Count > 0)
-                q.Dequeue();
+            lock (q)
+            {
+                if (q.Count == 0)
+                {
+                    tsc = new TaskCompletionSource<bool>();
+                    return new ValueTask<bool>(tsc.Task);
+                }
 
-            if (q.Count > 0)
+                Current = q.Dequeue();
+
                 return new ValueTask<bool>(true);
-
-            tsc = new TaskCompletionSource<bool>();
-            return new ValueTask<bool>(tsc.Task);
+            }
         }
     }
 }

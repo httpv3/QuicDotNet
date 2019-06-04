@@ -40,5 +40,10 @@ namespace HTTPv3.Quic.Messages.Common
         {
             return (packet.Bytes[HeaderForm_Offset] & HeaderForm_Mask) > 0;
         }
+
+        public static bool IsLongHeader(in byte firstHeaderBit)
+        {
+            return (firstHeaderBit & HeaderForm_Mask) > 0;
+        }
     }
 }

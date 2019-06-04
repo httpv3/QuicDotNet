@@ -81,6 +81,23 @@ namespace HTTPv3.Quic
             return bytesIn.Slice(bytesUsed);
         }
 
+        public static ReadOnlySpan<byte> Skip(this ReadOnlySpan<byte> bytesIn, in int numBytes)
+        {
+            return bytesIn.Slice(numBytes);
+        }
+
+        public static ReadOnlySpan<byte> Subtract(this in ReadOnlySpan<byte> first, in ReadOnlySpan<byte> second)
+        {
+            if (first.Length == 0) return first;
+            if (second.Length == 0) return first;
+
+            if (!first.Overlaps(second)) throw new DoesntOverlapException("ReadOnlySpanExtensions.Subtract: Spans do not overlap.");
+
+            if (first.Length < second.Length) throw new NotEnoughBytesException($"ReadOnlySpanExtensions.Subtract: First smaller than second. {first.Length} < {second.Length}");
+
+            return first.Slice(0, first.Length - second.Length);
+        }
+
         public static ushort ToUInt16(this ReadOnlySpan<byte> span, bool isNetworkByteOrder = true)
         {
             int len = span.Length;
