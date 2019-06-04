@@ -20,7 +20,14 @@ namespace HTTPv3.Quic.Messages.Common
             return ReadOnlyMemory<byte>.Empty;
         }
 
-        public override void RemoveHeaderProtection(EncryptionKeys keys)
+        public override InboundPacket AsDecryptedPacket(KeyManager keyMan)
+        {
+            var keys = keyMan.Application;
+            RemoveHeaderProtection(keys);
+            return new InboundPacket(this, keys);
+        }
+
+        protected override void RemoveHeaderProtection(EncryptionKeys keys)
         {
             if (!IsProtected) return;
 

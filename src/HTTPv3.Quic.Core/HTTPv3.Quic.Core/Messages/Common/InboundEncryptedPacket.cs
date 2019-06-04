@@ -8,6 +8,8 @@ namespace HTTPv3.Quic.Messages.Common
 {
     internal abstract class InboundEncryptedPacket
     {
+        public InboundDatagram InboundDatagram;
+
         public bool IsProtected = true;
         public ReadOnlyMemory<byte> DestId;
         public ReadOnlyMemory<byte> ProtectedPNandPayload;
@@ -36,6 +38,9 @@ namespace HTTPv3.Quic.Messages.Common
             }
         }
 
-        public abstract void RemoveHeaderProtection(EncryptionKeys keys);
+
+        public abstract InboundPacket AsDecryptedPacket(KeyManager keyMan);
+
+        protected abstract void RemoveHeaderProtection(EncryptionKeys keys);
     }
 }

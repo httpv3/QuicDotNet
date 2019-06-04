@@ -5,7 +5,7 @@ using System.Text;
 
 namespace HTTPv3.Quic.Messages.Common
 {
-    internal class InboundEncryptedLongPacket : InboundEncryptedPacket
+    internal abstract class InboundEncryptedLongPacket : InboundEncryptedPacket
     {
         public ReadOnlyMemory<byte> Version;
         public ReadOnlyMemory<byte> SrcId;
@@ -50,7 +50,7 @@ namespace HTTPv3.Quic.Messages.Common
             return cur;
         }
 
-        public override void RemoveHeaderProtection(EncryptionKeys keys)
+        protected override void RemoveHeaderProtection(EncryptionKeys keys)
         {
             if (!IsProtected) return;
 
