@@ -81,14 +81,14 @@ namespace HTTPv3.Quic.Security
             return new ReadOnlySpan<byte>(bytes, 0, 5);
         }
 
-        public byte[] DecryptPayload(ReadOnlySpan<byte> unprotectedFullHeader, ReadOnlySpan<byte> encryptedPayload, uint packetNumber)
+        public byte[] DecryptPayload(byte[] unprotectedFullHeader, ReadOnlySpan<byte> encryptedPayload, uint packetNumber)
         {
             var nonce = packetNumber.ToSpan(DecryptionIV.Length).ToArray();
             for (int i = 0; i < DecryptionIV.Length; i++)
                 nonce[i] ^= DecryptionIV[i];
 
             var cipher = new GcmBlockCipher(new AesEngine());
-            var parameters = new AeadParameters(new KeyParameter(DecryptionKey), 128, nonce, unprotectedFullHeader.ToArray());
+            var parameters = new AeadParameters(new KeyParameter(DecryptionKey), 128, nonce, unprotectedFullHeader);
             cipher.Init(false, parameters);
 
             var payload = new byte[cipher.GetOutputSize(encryptedPayload.Length)];

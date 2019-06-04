@@ -1,64 +1,41 @@
-﻿using System;
+﻿using HTTPv3.Quic.Exceptions.Security;
+using HTTPv3.Quic.Security;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace HTTPv3.Quic.Messages.Common
 {
-    internal ref struct InboundEncryptedPacket
+    internal abstract class InboundEncryptedPacket
     {
-        public byte FirstByte;
-        public byte LongHeaderType;
-        public ReadOnlySpan<byte> ExtraHeader;
-        public ReadOnlySpan<byte> ProtectedPNandPayload;
-        public ReadOnlySpan<byte> DestId;
-        public ReadOnlySpan<byte> SrcId;
+        public bool IsProtected = true;
+        public ReadOnlyMemory<byte> DestId;
+        public ReadOnlyMemory<byte> ProtectedPNandPayload;
+        public ReadOnlyMemory<byte> AllBytes;
 
-        internal static ReadOnlySpan<byte> Parse(in ReadOnlySpan<byte> data, out InboundEncryptedPacket packet)
+        protected uint packetNum = 0;
+        public uint PacketNum => IsProtected ? throw new PacketProtectedException("") : packetNum;
+
+        protected ReadOnlyMemory<byte> encryptedPayload;
+        public ReadOnlyMemory<byte> EncryptedPayload => IsProtected ? throw new PacketProtectedException("") : encryptedPayload;
+
+        protected byte[] unprotectedHeader;
+        public byte[] UnprotectedHeader => IsProtected ? throw new PacketProtectedException("") : unprotectedHeader;
+
+        internal static ReadOnlyMemory<byte> Parse(in ReadOnlyMemory<byte> start, out InboundEncryptedPacket packet)
         {
-            packet = new InboundEncryptedPacket();
+            var cur = start.Read(out byte firstByte);
 
-            var cur = data.Read(out packet.FirstByte);
-
-            if (Header.IsLongHeader(packet.FirstByte))
+            if (Header.IsLongHeader(firstByte))
             {
-                cur = cur.Skip(Header.Version_Length)
-                         .Read(out byte DCIL_SCIL);
-
-                int DCIL = LongHeader.ParseConnIDLength((byte)((DCIL_SCIL & Header.DCIL_Mask) >> Header.DCIL_Shift));
-                int SCIL = LongHeader.ParseConnIDLength((byte)(DCIL_SCIL & Header.SCIL_Mask));
-
-                cur = cur.Read(DCIL, out packet.DestId)
-                         .Read(SCIL, out packet.SrcId);
-
-                packet.LongHeaderType = (byte)((packet.FirstByte & Header.LongPacketType_Mask) >> Header.LongPacketType_Shift)
-
-                switch(packet.LongHeaderType)
-                {
-                    case 0:
-                        var startOfExtra = cur;
-                        var endOfExtra = startOfExtra.ReadNextVariableInt(out int tLen).Skip(tLen);
-
-                        packet.ExtraHeader = startOfExtra.Subtract(endOfExtra);
-
-                        cur = endOfExtra.ReadNextVariableInt(out int len)
-                                        .Read(len, out packet.ProtectedPNandPayload);
-                        break;
-                    case 1:
-                    case 2:
-                        cur = cur.ReadNextVariableInt(out int len2)
-                                 .Read(len2, out packet.ProtectedPNandPayload);
-                        break;
-                    case 3:
-                        throw new NotImplementedException();
-                        break;
-                }
+                return InboundEncryptedLongPacket.Parse(start, cur, firstByte, out packet);
             }
             else
             {
-                cur = cur.Read(ConnectionId.DefaultLength, out packet.DestId);
-                packet.ProtectedPNandPayload = cur;
-                return Span<byte>.Empty;
+                return InboundEncryptedShortPacket.Parse(start, cur, out packet);
             }
         }
+
+        public abstract void RemoveHeaderProtection(EncryptionKeys keys);
     }
 }

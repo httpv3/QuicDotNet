@@ -130,7 +130,7 @@ namespace HTTPv3.Quic.Messages.Common
 
         private void DecryptPayLoad(EncryptionKeys keys)
         {
-            PayloadCursor = Payload = keys.DecryptPayload(HeaderBytes, EncryptedPayload, PacketNumber);
+            PayloadCursor = Payload = keys.DecryptPayload(HeaderBytes.ToArray(), EncryptedPayload, PacketNumber);
             State = PacketState.Decrypted;
         }
     }
