@@ -34,6 +34,15 @@ namespace HTTPv3.Quic.Messages.Frames
 
     internal static class FrameTypeExtensions
     {
+        public static ReadOnlyMemory<byte> Read(this in ReadOnlyMemory<byte> bytesIn, out FrameType type)
+        {
+            var ret = bytesIn.Read(out byte val);
+
+            type = ParseValue(val);
+
+            return ret;
+        }
+
         public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, out FrameType type)
         {
             var ret = bytesIn.Read(out byte val);

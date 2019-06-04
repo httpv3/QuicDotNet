@@ -43,4 +43,15 @@ namespace HTTPv3.Quic.Messages.Common
 
         protected abstract void RemoveHeaderProtection(EncryptionKeys keys);
     }
+
+    internal static class InboundEncryptedPacketExtension
+    {
+        public static async IAsyncEnumerable<InboundPacket> AsDecrypted(this IAsyncEnumerable<InboundEncryptedPacket> encPackets, KeyManager keyMan)
+        {
+            await foreach (var p in encPackets)
+            {
+                    yield return p.AsDecryptedPacket(keyMan);
+            }
+        }
+    }
 }

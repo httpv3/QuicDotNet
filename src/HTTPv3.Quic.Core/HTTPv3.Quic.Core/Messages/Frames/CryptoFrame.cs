@@ -23,15 +23,16 @@ namespace HTTPv3.Quic.Messages.Frames
             Data = data;
         }
 
-        public static CryptoFrame Parse(ref ReadOnlySpan<byte> bytes)
+        public static ReadOnlyMemory<byte> Parse(in ReadOnlyMemory<byte> bytes, out IFrame frameOut)
         {
-            CryptoFrame ret = new CryptoFrame();
+            CryptoFrame f = new CryptoFrame();
+            frameOut = f;
 
-            bytes = bytes.ReadNextVariableInt(out ret.Offset)
-                         .ReadNextVariableInt(out int length)
-                         .Read(length, out ret.Data);
+            var cur = bytes.ReadNextVariableInt(out f.Offset)
+                           .ReadNextVariableInt(out int len)
+                           .Read(len, out f.Data);
 
-            return ret;
+            return cur;
         }
 
         public Span<byte> Write(Span<byte> buffer)

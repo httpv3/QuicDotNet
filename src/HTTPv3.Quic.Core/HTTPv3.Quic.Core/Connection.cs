@@ -16,7 +16,7 @@ namespace HTTPv3.Quic
     {
         private const int MINIMUM_INITIAL_PAYLOAD_SIZE = 1180;
 
-        public CancellationToken cancel;
+        public CancellationToken Cancel;
 
         public ConnectionState ConnectionState { get; private set; } = ConnectionState.NotConnected;
 
@@ -42,7 +42,7 @@ namespace HTTPv3.Quic
 
         internal Connection(byte[] clientChosenDestinationId, string serverName, bool isServer, CancellationToken cancel = default)
         {
-            this.cancel = cancel;
+            this.Cancel = cancel;
             ServerName = serverName;
             IsServer = isServer;
 

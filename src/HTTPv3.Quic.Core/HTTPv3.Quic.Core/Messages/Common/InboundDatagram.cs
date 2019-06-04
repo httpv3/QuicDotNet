@@ -10,6 +10,11 @@ namespace HTTPv3.Quic.Messages.Common
         public DateTime Recieved = DateTime.UtcNow;
         public DateTime Processed;
 
+        public InboundDatagram(ReadOnlyMemory<byte> data)
+        {
+            Data = data;
+        }
+
         public IEnumerable<InboundEncryptedPacket> AsPackets()
         {
             var cur = Data;
@@ -18,6 +23,18 @@ namespace HTTPv3.Quic.Messages.Common
                 cur = InboundEncryptedPacket.Parse(cur, out var p);
                 p.InboundDatagram = this;
                 yield return p;
+            }
+        }
+    }
+
+    internal static class InboundDatagramExtension
+    {
+        public static async IAsyncEnumerable<InboundEncryptedPacket> AsPackets(this IAsyncEnumerable<InboundDatagram> datagrams)
+        {
+            await foreach(var d in datagrams)
+            {
+                foreach (var p in d.AsPackets())
+                    yield return p;
             }
         }
     }

@@ -119,8 +119,9 @@ namespace HTTPv3.Quic.Messages.Common
                     return new ConnectionCloseAppFrame(ref this);
                 case FrameType.ConnectionCloseQuic:
                     return new ConnectionCloseQuicFrame(ref this);
-                case FrameType.Crypto:
-                    return CryptoFrame.Parse(ref PayloadCursor);
+                //case FrameType.Crypto:
+                //    PayloadCursor = CryptoFrame.Parse(PayloadCursor, out var f);
+                //    return f;
                 case FrameType.NewConnectionId:
                     return new NewConnectionIdFrame(ref this);
                 default:
