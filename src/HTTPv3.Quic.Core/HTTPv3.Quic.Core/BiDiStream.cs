@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HTTPv3.Quic.Messages.Frames;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO.Pipelines;
@@ -10,52 +11,72 @@ namespace HTTPv3.Quic
 {
     public class BiDiStream
     {
-        private PipeReader Input;
-        private PipeWriter Output;
+        private Pipe fromApplication = new Pipe();
+        private Pipe toApplication = new Pipe();
 
-        public async Task<byte> ReadByte(CancellationToken cancel)
+        private ulong fromAppOffset = 0;
+        private ulong toAppOffset = 0;
+
+        private Dictionary<ulong, StreamFrame> frames = new Dictionary<ulong, StreamFrame>();
+
+        public BiDiStream()
         {
-            return (await Input.ReadBytes(1, cancel))[0];
+
         }
 
-        public async Task<byte[]> ReadBytes(int numBytes, CancellationToken cancel)
+        internal BiDiStream(ulong fromAppOffset, ulong toAppOffset)
         {
-            while (true)
+            this.fromAppOffset = fromAppOffset;
+            this.toAppOffset = toAppOffset;
+        }
+
+        public PipeReader Reader => toApplication.Reader;
+        public PipeWriter Output => fromApplication.Writer;
+
+        //internal bool HasDataFromApp => fromApplication.Reader.
+
+        internal async Task AddFrame(StreamFrame frame)
+        {
+            if (toAppOffset == frame.Offset)
             {
-                ReadResult result = await Input.ReadAsync(cancel);
-
-                if (result.IsCanceled)
-                    return new byte[numBytes];
-
-                ReadOnlySequence<byte> buffer = result.Buffer;
-
-                if (buffer.Length < numBytes)
+                await SendToApp(frame);
+            }
+            else
+            {
+                lock (frames)
                 {
-                    Input.AdvanceTo(buffer.Start, buffer.End);
-                    continue;
+                    frames[frame.Offset] = frame;
+                }
+            }
+
+            if (frames.Count > 0)
+                await DrainQueue();
+        }
+
+        private async Task DrainQueue()
+        {
+            while (frames.Count > 0)
+            {
+                StreamFrame frame;
+
+                lock (frames)
+                {
+                    if (!frames.Remove(toAppOffset, out frame))
+                        return;
                 }
 
-                var data = buffer.Slice(0, numBytes);
-
-                var next = buffer.GetPosition(numBytes);
-
-                Input.AdvanceTo(next);
-
-                return data.ToArray();
+                await SendToApp(frame);
             }
         }
 
-        public async Task<int> ReadInt(int numBytes, CancellationToken cancel)
+        private async Task SendToApp(StreamFrame frame)
         {
-            return (await Input.ReadBytes(numBytes, cancel)).ToInt32();
+            await toApplication.Writer.WriteAsync(frame.Data);
+
+            if (frame.LastFrame)
+                toApplication.Writer.Complete();
+
+            toAppOffset += (ulong)frame.Data.Length;
         }
-
-
-        public async Task<byte[]> ReadTLSData(int lengthNumBytes, CancellationToken cancel)
-        {
-            int length = await Input.ReadInt(lengthNumBytes, cancel);
-            return await Input.ReadBytes(length, cancel);
-        }
-
     }
 }
