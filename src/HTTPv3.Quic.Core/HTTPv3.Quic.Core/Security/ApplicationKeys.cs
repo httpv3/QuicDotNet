@@ -1,4 +1,5 @@
-﻿using HTTPv3.Quic.TLS.Messages.Extensions;
+﻿using HTTPv3.Quic.TLS;
+using HTTPv3.Quic.TLS.Messages.Extensions;
 using System;
 
 namespace HTTPv3.Quic.Security
@@ -8,7 +9,7 @@ namespace HTTPv3.Quic.Security
     // https://tools.ietf.org/html/draft-ietf-quic-transport-19#section-5
     internal class ApplicationKeys : EncryptionKeys
     {
-        public ApplicationKeys(in byte[] encSecret, in byte[] decSecret, CipherSuite cipherSuite) : base(encSecret, decSecret, cipherSuite)
+        public ApplicationKeys(in byte[] encSecret, in byte[] decSecret, CipherSuite cipherSuite) : base(EncryptionState.Application, encSecret, decSecret, cipherSuite)
         {
         }
     }

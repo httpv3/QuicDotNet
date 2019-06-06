@@ -35,7 +35,7 @@ namespace HTTPv3.Quic.Messages.Frames
             return cur;
         }
 
-        public Span<byte> Write(Span<byte> buffer)
+        public Span<byte> Write(Span<byte> buffer, bool isLastInPacket)
         {
             return buffer.Write(FrameType.Crypto)
                          .WriteVarLengthInt(Offset)

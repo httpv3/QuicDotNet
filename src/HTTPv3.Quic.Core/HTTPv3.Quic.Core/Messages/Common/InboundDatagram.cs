@@ -8,7 +8,6 @@ namespace HTTPv3.Quic.Messages.Common
     {
         public ReadOnlyMemory<byte> Data;
         public DateTime Recieved = DateTime.UtcNow;
-        public DateTime Processed;
 
         public InboundDatagram(ReadOnlyMemory<byte> data)
         {

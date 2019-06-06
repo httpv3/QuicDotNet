@@ -9,9 +9,8 @@ using System.Threading.Tasks;
 
 namespace HTTPv3.Quic
 {
-    public class BiDiStream
+    public class CryptoStream
     {
-        public readonly ulong StreamId;
         private readonly CancellationToken cancel;
         private readonly Pipe fromApp = new Pipe();
         private readonly Pipe toApp = new Pipe();
@@ -19,18 +18,17 @@ namespace HTTPv3.Quic
         private ulong fromAppOffset = 0;
         private ulong toAppOffset = 0;
 
-        private Dictionary<ulong, StreamFrame> frames = new Dictionary<ulong, StreamFrame>();
+        private Dictionary<ulong, CryptoFrame> frames = new Dictionary<ulong, CryptoFrame>();
 
-        public BiDiStream(ulong streamId, CancellationToken cancel)
+        public CryptoStream(CancellationToken cancel)
         {
-            StreamId = streamId;
             this.cancel = cancel;
         }
 
         public PipeReader Reader => toApp.Reader;
         public PipeWriter Output => fromApp.Writer;
 
-        internal async Task AddFrame(StreamFrame frame)
+        internal async Task AddFrame(CryptoFrame frame)
         {
             if (toAppOffset == frame.Offset)
             {
@@ -48,18 +46,18 @@ namespace HTTPv3.Quic
                 await DrainQueue();
         }
 
-        internal async IAsyncEnumerable<long> GetNumBytesAvailable()
+        internal async IAsyncEnumerable<(CryptoStream, long)> GetNumBytesAvailable()
         {
             var res = await fromApp.Reader.ReadAsync(cancel);
-            while (!(res.IsCanceled || (res.IsCompleted && res.Buffer.Length == 0)))
+            while (!res.IsCanceled)
             {
-                yield return res.Buffer.Length;
+                yield return (this, res.Buffer.Length);
 
                 res = await fromApp.Reader.ReadAsync(cancel);
             }
         }
 
-        internal async Task<StreamFrame> GetFrame(int numDesiredBytes)
+        internal async Task<CryptoFrame> GetFrame(int numDesiredBytes)
         {
             var res = await fromApp.Reader.ReadAsync(cancel);
 
@@ -67,22 +65,23 @@ namespace HTTPv3.Quic
 
             var data = res.Buffer.Slice(0, len).ToArray();
 
-            bool last = false;
-            if (res.IsCompleted && res.Buffer.Length == len)
-                last = true;
-
-            var ret = new StreamFrame(StreamId, fromAppOffset, data, last);
+            var ret = new CryptoFrame(fromAppOffset, data);
 
             fromAppOffset += (ulong)len;
 
             return ret;
         }
 
+        internal void AddToFromAppOffset(int offset)
+        {
+            fromAppOffset += (uint)offset;
+        }
+
         private async Task DrainQueue()
         {
             while (frames.Count > 0)
             {
-                StreamFrame frame;
+                CryptoFrame frame;
 
                 lock (frames)
                 {
@@ -94,12 +93,9 @@ namespace HTTPv3.Quic
             }
         }
 
-        private async Task SendToApp(StreamFrame frame)
+        private async Task SendToApp(CryptoFrame frame)
         {
             await toApp.Writer.WriteAsync(frame.Data, cancel);
-
-            if (frame.LastFrame)
-                toApp.Writer.Complete();
 
             toAppOffset += (ulong)frame.Data.Length;
         }

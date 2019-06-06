@@ -13,6 +13,7 @@ namespace HTTPv3.Quic.Messages.Frames
         public const byte LEN_BIT = 0x2;
         public const byte FIN_BIT = 0x1;
 
+        public ulong StreamId;
         public ulong Offset = 0;
         public ReadOnlyMemory<byte> Data;
         public bool LastFrame = false;
@@ -21,8 +22,9 @@ namespace HTTPv3.Quic.Messages.Frames
         {
         }
 
-        public StreamFrame(in ulong offset, in ReadOnlyMemory<byte> data, bool lastFrame = false)
+        public StreamFrame(in ulong streamId, in ulong offset, in ReadOnlyMemory<byte> data, bool lastFrame = false)
         {
+            StreamId = streamId;
             Offset = offset;
             Data = data;
             LastFrame = lastFrame;
@@ -36,7 +38,7 @@ namespace HTTPv3.Quic.Messages.Frames
             };
             frameOut = f;
 
-            var cur = bytes;
+            var cur = bytes.ReadNextVariableInt(out f.StreamId);
 
             if ((type & OFF_BIT) > 0)
                 cur = cur.ReadNextVariableInt(out f.Offset);
@@ -51,16 +53,19 @@ namespace HTTPv3.Quic.Messages.Frames
                       .Read(len, out f.Data);
         }
 
-        public Span<byte> Write(Span<byte> buffer)
+        public Span<byte> Write(Span<byte> buffer, bool isLastInPacket)
         {
-            throw new NotImplementedException();
+            var type = TYPE_DEFAULT | (Offset == 0 ? 0 : OFF_BIT) | (isLastInPacket ? 0 : LEN_BIT) | (LastFrame ? FIN_BIT : 0);
 
-            //var type = TYPE_DEFAULT | (Offset == 0 ? 0 : OFF_BIT) | (LastFrame)
+            var cur = buffer.Write((ushort)type).WriteVarLengthInt(StreamId);
 
-            //return buffer.Write(FrameType.Crypto)
-            //             .WriteVarLengthInt(Offset)
-            //             .WriteVarLengthInt(Data.Length)
-            //             .Write(Data);
+            if (Offset > 0)
+                cur = cur.WriteVarLengthInt(Offset);
+
+            if (!isLastInPacket)
+                cur = cur.WriteVarLengthInt(Data.Length);
+
+            return cur.Write(Data.Span);
         }
     }
 }

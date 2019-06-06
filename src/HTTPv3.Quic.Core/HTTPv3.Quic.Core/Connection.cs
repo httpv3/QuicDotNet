@@ -35,8 +35,9 @@ namespace HTTPv3.Quic
 
         public ConnectionId MyConnectionId {  get { return IsServer ? ServerConnectionId as ConnectionId : ClientConnectionId as ConnectionId; } }
 
-        private Pipe TLSSender = new Pipe();
-        private Pipe TLSReceiver = new Pipe();
+        internal CryptoStream InitialStream;
+        internal CryptoStream HandshakeStream;
+        internal CryptoStream ApplicationStream;
 
         private Task tlsReaderTask;
 
@@ -46,9 +47,13 @@ namespace HTTPv3.Quic
             ServerName = serverName;
             IsServer = isServer;
 
+            InitialStream = new CryptoStream(cancel);
+            HandshakeStream = new CryptoStream(cancel);
+            ApplicationStream = new CryptoStream(cancel);
+
             KeyManager = new KeyManager(clientChosenDestinationId, isServer);
 
-            TLSConn = new TLS.ClientConnection(TLSSender.Reader, TLSReceiver.Writer, cancel);
+            TLSConn = new TLS.ClientConnection(InitialStream, HandshakeStream, ApplicationStream, cancel);
 
             tlsReaderTask = StartReadingFromTLS();
         }
@@ -69,7 +74,9 @@ namespace HTTPv3.Quic
             var frameData = temp.AsSpan(0, temp.Length - after.Length);
             CryptoFrame frame = new CryptoFrame(0, frameData.ToArray());
 
-            var curSpan = frame.Write(buffer);
+            InitialStream.AddToFromAppOffset(frameData.Length);
+
+            var curSpan = frame.Write(buffer, false);
             length = buffer.Length - curSpan.Length;
 
             if (length > MINIMUM_INITIAL_PAYLOAD_SIZE) //No Padding needed.

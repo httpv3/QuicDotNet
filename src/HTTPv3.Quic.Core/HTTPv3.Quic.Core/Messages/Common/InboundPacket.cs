@@ -1,5 +1,6 @@
 ﻿using HTTPv3.Quic.Messages.Frames;
 using HTTPv3.Quic.Security;
+using HTTPv3.Quic.TLS;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,12 +9,16 @@ namespace HTTPv3.Quic.Messages.Common
 {
     internal class InboundPacket
     {
+        public readonly EncryptionState KeySpace;
+
         public InboundEncryptedPacket EncryptedPacket;
 
         public ReadOnlyMemory<byte> Payload;
 
-        public InboundPacket (InboundEncryptedPacket packet, EncryptionKeys keys)
+        public InboundPacket(InboundEncryptedPacket packet, EncryptionKeys keys)
         {
+            KeySpace = keys.KeySpace;
+
             EncryptedPacket = packet;
 
             Payload = keys.DecryptPayload(packet.UnprotectedHeader, packet.EncryptedPayload.Span, packet.PacketNum);

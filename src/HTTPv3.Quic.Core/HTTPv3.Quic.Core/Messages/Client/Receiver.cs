@@ -1,5 +1,6 @@
 ﻿using HTTPv3.Quic.Messages.Common;
 using HTTPv3.Quic.Messages.Frames;
+using HTTPv3.Quic.TLS;
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
@@ -13,38 +14,56 @@ namespace HTTPv3.Quic.Messages.Client
         UdpClient udpClient;
         Connection conn;
 
+        InitialProcessor initial;
+        HandshakeProcessor handshake;
+        ApplicationProcessor application;
+
         public Receiver(UdpClient udpClient, Connection conn)
         {
             this.udpClient = udpClient;
             this.conn = conn;
+
+            initial = new InitialProcessor(conn);
+            handshake = new HandshakeProcessor(conn);
+            application = new ApplicationProcessor(conn);
+        }
+
+        public async Task Run()
+        {
+            await foreach (var packet in GetPackets())
+            {
+                switch (packet.KeySpace)
+                {
+                    case EncryptionState.Initial:
+                        await initial.Process(packet);
+                        break;
+                    case EncryptionState.Handshake:
+                        await initial.Process(packet);
+                        break;
+                    case EncryptionState.Application:
+                        await initial.Process(packet);
+                        break;
+                }
+
+                packet.EncryptedPacket.Processed = DateTime.UtcNow;
+
+                //Add packet to ACKHandler
+            }
         }
 
         private async IAsyncEnumerable<InboundDatagram> GetDatagrams()
         {
-            var tcs = new TaskCompletionSource<decimal>();
-
-            conn.Cancel.Register(() =>
-            {
-                tcs.TrySetCanceled();
-            });
-
             while (!conn.Cancel.IsCancellationRequested)
             {
-                var t = udpClient.ReceiveAsync();
-
-                await Task.WhenAny(t, tcs.Task);
-                if (conn.Cancel.IsCancellationRequested)
-                    break;
-
-                var res = t.Result;
+                var res = await udpClient.ReceiveAsync(conn.Cancel);
 
                 yield return new InboundDatagram(res.Buffer);
             }
         }
 
-        public IAsyncEnumerable<IFrame> GetFrames()
+        public IAsyncEnumerable<InboundPacket> GetPackets()
         {
-            return GetDatagrams().AsPackets().AsDecrypted(conn.KeyManager).AsFrames();
+            return GetDatagrams().AsPackets().AsDecrypted(conn.KeyManager);
         }
     }
 }

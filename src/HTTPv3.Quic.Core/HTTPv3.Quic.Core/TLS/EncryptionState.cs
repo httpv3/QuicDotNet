@@ -6,8 +6,8 @@ namespace HTTPv3.Quic.TLS
 {
     public enum EncryptionState
     {
-        Initial,
-        Handshake,
-        Application
+        Initial = 0,
+        Handshake = 1,
+        Application = 2
     }
 }

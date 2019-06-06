@@ -23,16 +23,19 @@ namespace HTTPv3.Quic.TLS
     {
         private static SecureRandom prng = new SecureRandom();
 
-        CancellationToken cancel;
-        PipeReader reader;
-        PipeWriter writer;
+        private CancellationToken cancel;
+
+        private CryptoStream InitialStream;
+        private CryptoStream HandshakeStream;
+        private CryptoStream ApplicationStream;
 
         Task readerTask;
 
-        public ClientConnection(PipeReader reader, PipeWriter writer, CancellationToken cancel)
+        public ClientConnection(CryptoStream initial, CryptoStream handshake, CryptoStream application, CancellationToken cancel)
         {
-            this.reader = reader;
-            this.writer = writer;
+            InitialStream = initial;
+            HandshakeStream = handshake;
+            ApplicationStream = application;
             this.cancel = cancel;
 
             readerTask = StartReading();
@@ -40,12 +43,12 @@ namespace HTTPv3.Quic.TLS
 
         private async Task StartReading()
         {
-            await foreach (var r in RawRecord.ReadRecords(reader, cancel))
-            {
-                var msg = Handshake.Parse(r);
-                //if (msg != null)
-                //    msg.Process(this);
-            }
+            //await foreach (var r in RawRecord.ReadRecords(reader, cancel))
+            //{
+            //    var msg = Handshake.Parse(r);
+            //    //if (msg != null)
+            //    //    msg.Process(this);
+            //}
         }
 
         internal Span<byte> WriteClientHello(in Span<byte> buffer, string serverName, params UnknownExtension[] unknownExtensions)

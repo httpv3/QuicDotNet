@@ -125,6 +125,15 @@ namespace HTTPv3.Quic
             return buffer.Slice(numBytes);
         }
 
+        public static Span<byte> Write(this in Span<byte> buffer, in ReadOnlySpan<byte> bytesIn)
+        {
+            if (buffer.Length < bytesIn.Length) throw new NotEnoughBytesException($"Expecting {bytesIn.Length} bytes but only have {buffer.Length} bytes left.");
+
+            bytesIn.CopyTo(buffer);
+
+            return buffer.Slice(bytesIn.Length);
+        }
+
         public static Span<byte> Write(this in Span<byte> buffer, in Span<byte> bytesIn)
         {
             if (buffer.Length < bytesIn.Length) throw new NotEnoughBytesException($"Expecting {bytesIn.Length} bytes but only have {buffer.Length} bytes left.");

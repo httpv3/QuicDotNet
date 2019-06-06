@@ -1,4 +1,5 @@
-﻿using HTTPv3.Quic.TLS.Messages.Extensions;
+﻿using HTTPv3.Quic.TLS;
+using HTTPv3.Quic.TLS.Messages.Extensions;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
@@ -24,6 +25,8 @@ namespace HTTPv3.Quic.Security
         public readonly static AronParker.Hkdf.Hkdf Hkdf256 = new AronParker.Hkdf.Hkdf(HashAlgorithmName.SHA256);
         public readonly static AronParker.Hkdf.Hkdf Hkdf384 = new AronParker.Hkdf.Hkdf(HashAlgorithmName.SHA384);
 
+        public readonly EncryptionState KeySpace;
+
         public readonly byte[] EncryptionKey;
         public readonly byte[] EncryptionIV;
         public readonly byte[] EncryptionHP;
@@ -35,8 +38,10 @@ namespace HTTPv3.Quic.Security
         public readonly IBufferedCipher Encryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
         public readonly IBufferedCipher Decryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
 
-        protected EncryptionKeys(in byte[] encSecret, in byte[] decSecret, CipherSuite cipherSuite)
+        protected EncryptionKeys(EncryptionState state, in byte[] encSecret, in byte[] decSecret, CipherSuite cipherSuite)
         {
+            KeySpace = state;
+
             AronParker.Hkdf.Hkdf hkdf;
             ushort keySize;
 
