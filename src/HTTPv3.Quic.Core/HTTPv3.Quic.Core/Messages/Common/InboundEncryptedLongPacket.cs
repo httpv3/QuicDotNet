@@ -15,8 +15,8 @@ namespace HTTPv3.Quic.Messages.Common
             var cur = current.Read(Header.Version_Length, out ReadOnlyMemory<byte> version)
                              .Read(out byte DCIL_SCIL);
 
-            int DCIL = LongHeader.ParseConnIDLength((byte)((DCIL_SCIL & Header.DCIL_Mask) >> Header.DCIL_Shift));
-            int SCIL = LongHeader.ParseConnIDLength((byte)(DCIL_SCIL & Header.SCIL_Mask));
+            int DCIL = ConnectionId.ParseLengthByte((byte)((DCIL_SCIL & Header.DCIL_Mask) >> Header.DCIL_Shift));
+            int SCIL = ConnectionId.ParseLengthByte((byte)(DCIL_SCIL & Header.SCIL_Mask));
 
             cur = cur.Read(DCIL, out ReadOnlyMemory<byte> destId)
                      .Read(SCIL, out ReadOnlyMemory<byte> srcId);

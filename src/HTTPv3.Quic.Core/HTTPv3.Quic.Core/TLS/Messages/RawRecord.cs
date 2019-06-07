@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace HTTPv3.Quic.TLS.Messages
 {
-    class RawRecord
+    public class RawRecord
     {
         public const int Length_NumBytes = 3;
 

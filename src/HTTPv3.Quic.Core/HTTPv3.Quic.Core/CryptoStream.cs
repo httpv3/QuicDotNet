@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HTTPv3.Quic
 {
-    public class CryptoStream
+    public class CryptoStream : IFrameStreamer
     {
         private readonly CancellationToken cancel;
         private readonly Pipe fromApp = new Pipe();
@@ -20,9 +20,12 @@ namespace HTTPv3.Quic
 
         private Dictionary<ulong, CryptoFrame> frames = new Dictionary<ulong, CryptoFrame>();
 
+        public AvailableFrameInfo AvailableInfo { get; }
+
         public CryptoStream(CancellationToken cancel)
         {
             this.cancel = cancel;
+            AvailableInfo = new AvailableFrameInfo(this);
         }
 
         public PipeReader Reader => toApp.Reader;
@@ -46,20 +49,10 @@ namespace HTTPv3.Quic
                 await DrainQueue();
         }
 
-        internal async IAsyncEnumerable<(CryptoStream, long)> GetNumBytesAvailable()
+        public async Task<CryptoFrame> GetFrame(int numDesiredBytes)
         {
             var res = await fromApp.Reader.ReadAsync(cancel);
-            while (!res.IsCanceled)
-            {
-                yield return (this, res.Buffer.Length);
-
-                res = await fromApp.Reader.ReadAsync(cancel);
-            }
-        }
-
-        internal async Task<CryptoFrame> GetFrame(int numDesiredBytes)
-        {
-            var res = await fromApp.Reader.ReadAsync(cancel);
+            AvailableInfo.Reset();
 
             var len = Math.Min(res.Buffer.Length, numDesiredBytes);
 
@@ -72,9 +65,23 @@ namespace HTTPv3.Quic
             return ret;
         }
 
+        public async IAsyncEnumerable<AvailableFrameInfo> WaitBytesAvailable()
+        {
+            var res = await fromApp.Reader.ReadAsync(cancel);
+            while (!res.IsCanceled)
+            {
+                SetAvailable(res.Buffer.Length);
+
+                yield return AvailableInfo;
+
+                res = await fromApp.Reader.ReadAsync(cancel);
+            }
+        }
+
         internal void AddToFromAppOffset(int offset)
         {
             fromAppOffset += (uint)offset;
+            AvailableInfo.Reset();
         }
 
         private async Task DrainQueue()
@@ -98,6 +105,12 @@ namespace HTTPv3.Quic
             await toApp.Writer.WriteAsync(frame.Data, cancel);
 
             toAppOffset += (ulong)frame.Data.Length;
+        }
+
+        private void SetAvailable(long length)
+        {
+            var avail = CryptoFrame.GetSize(fromAppOffset, (ulong)length);
+            AvailableInfo.Set(avail.min, avail.max);
         }
     }
 }

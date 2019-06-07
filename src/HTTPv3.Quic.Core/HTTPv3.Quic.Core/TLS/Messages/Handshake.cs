@@ -4,7 +4,7 @@ using System.Text;
 
 namespace HTTPv3.Quic.TLS.Messages
 {
-    internal class Handshake
+    public class Handshake
     {
         public const int Length_NumBytes = 3;
 
@@ -37,7 +37,7 @@ namespace HTTPv3.Quic.TLS.Messages
         }
     }
 
-    internal enum HandshakeType : byte
+    public enum HandshakeType : byte
     {
         ClientHello = 1,
         ServerHello = 2,

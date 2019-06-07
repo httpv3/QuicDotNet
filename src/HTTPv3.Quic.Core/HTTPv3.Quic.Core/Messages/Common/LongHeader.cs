@@ -39,8 +39,8 @@ namespace HTTPv3.Quic.Messages.Common
             Version = packet.Bytes.Slice(Header.Version_Offset, Header.Version_Length);
             VersionType = ParseVersionType(Version);
 
-            int DCIL = ParseConnIDLength((byte)((packet.Bytes[Header.DCIL_Offset] & Header.DCIL_Mask) >> Header.DCIL_Shift));
-            int SCIL = ParseConnIDLength((byte)(packet.Bytes[Header.SCIL_Offset] & Header.SCIL_Mask));
+            int DCIL = ConnectionId.ParseLengthByte((byte)((packet.Bytes[Header.DCIL_Offset] & Header.DCIL_Mask) >> Header.DCIL_Shift));
+            int SCIL = ConnectionId.ParseLengthByte((byte)(packet.Bytes[Header.SCIL_Offset] & Header.SCIL_Mask));
 
             int destionationConnIdOffset = Header.StartOfConnIDs_Offset; 
             int sourceConnIdOffset = destionationConnIdOffset + DCIL;
@@ -59,13 +59,6 @@ namespace HTTPv3.Quic.Messages.Common
             p.Bytes[0] ^= (byte)(p.HeaderProtectionMask[0] & 0xF);
 
             TypeSpecificBits = (byte)(HeaderBytes[Header.TypeSpecificBits_Offset] & Header.TypeSpecificBits_Mask);
-        }
-
-        public static int ParseConnIDLength(byte field)
-        {
-            if (field == 0x0) return 0x0;
-
-            return field + 3;
         }
 
         public static VersionTypes ParseVersionType(ReadOnlySpan<byte> version)
@@ -120,5 +113,6 @@ namespace HTTPv3.Quic.Messages.Common
         Draft_17 = 0xFF000011,
         Draft_18 = 0xFF000012,
         Draft_19 = 0xFF000013,
+        Draft_20 = 0xFF000014,
     }
 }

@@ -12,17 +12,28 @@ namespace HTTPv3.Quic
         public const int DefaultLength = 4;
         private static SecureRandom prng = new SecureRandom();
         private static IFNV1 Hasher = FNV1Factory.Instance.Create(FNVConfig.GetPredefinedConfig(32));
+
         public readonly byte[] ConnectionIdBytes;
         public readonly int HashCode;
+        public readonly byte LengthByte;
 
         public ConnectionId(byte[] connectionIdBytes)
         {
+            if (connectionIdBytes.Length > 18)
+                throw new Exception();
+
             ConnectionIdBytes = connectionIdBytes;
 
             if (ConnectionIdBytes.Length == 0)
+            {
                 HashCode = 0;
+                LengthByte = 0;
+            }
             else
+            {
                 HashCode = Hasher.ComputeHash(connectionIdBytes).Hash.ToInt32(true);
+                LengthByte = (byte)(connectionIdBytes.Length - 3);
+            }
         }
 
         protected static byte[] GenerateBytes(int length = DefaultLength)
@@ -60,9 +71,24 @@ namespace HTTPv3.Quic
             return false;
         }
 
+        public static int ParseLengthByte(byte connIdLenByte)
+        {
+            if (connIdLenByte == 0x0) return 0x0;
+
+            return connIdLenByte + 3;
+        }
+
         public override string ToString()
         {
             return BitConverter.ToString(ConnectionIdBytes);
+        }
+
+        public Span<byte> Write(Span<byte> buffer)
+        {
+            if (ConnectionIdBytes.Length == 0)
+                return buffer;
+
+            return buffer.Write(ConnectionIdBytes);
         }
     }
 }

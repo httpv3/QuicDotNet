@@ -54,10 +54,10 @@ namespace HTTPv3.Quic.Messages.Common
         [TestMethod]
         public void TestParseConnIDLength()
         {
-            Assert.AreEqual(0, LongHeader.ParseConnIDLength(0x0));
-            Assert.AreEqual(4, LongHeader.ParseConnIDLength(0x1));
-            Assert.AreEqual(8, LongHeader.ParseConnIDLength(0x5));
-            Assert.AreEqual(18, LongHeader.ParseConnIDLength(0xF));
+            Assert.AreEqual(0, ConnectionId.ParseLengthByte(0x0));
+            Assert.AreEqual(4, ConnectionId.ParseLengthByte(0x1));
+            Assert.AreEqual(8, ConnectionId.ParseLengthByte(0x5));
+            Assert.AreEqual(18, ConnectionId.ParseLengthByte(0xF));
         }
 
         [TestMethod]

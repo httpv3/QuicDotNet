@@ -6,7 +6,7 @@ using System.Text;
 
 namespace HTTPv3.Quic.Messages.Frames
 {
-    internal class CryptoFrame : IFrame
+    public class CryptoFrame : IFrame
     {
         public List<Handshake> HandshakeMessages = new List<Handshake>();
 
@@ -23,6 +23,25 @@ namespace HTTPv3.Quic.Messages.Frames
             Data = data;
         }
 
+        public static (ushort min, ushort max) GetSize(ulong offset, ulong dataLen)
+        {
+            ushort min = 4; //type + 1 length + 1 data
+            min += (ushort)VariableLengthInt.GetNumberOfBytesNeeded(offset);
+
+            if (dataLen > IFrame.MAX_SIZE)
+                return (min, IFrame.MAX_SIZE);
+
+            ushort max = 2;
+            max += (ushort)VariableLengthInt.GetNumberOfBytesNeeded(offset);
+            max += (ushort)VariableLengthInt.GetNumberOfBytesNeeded(dataLen);
+            max += (ushort)dataLen;
+
+            if (max > IFrame.MAX_SIZE)
+                return (min, IFrame.MAX_SIZE);
+
+            return (min, max);
+        }
+
         public static ReadOnlyMemory<byte> Parse(in ReadOnlyMemory<byte> bytes, out IFrame frameOut)
         {
             CryptoFrame f = new CryptoFrame();
@@ -33,6 +52,12 @@ namespace HTTPv3.Quic.Messages.Frames
                            .Read(len, out f.Data);
 
             return cur;
+        }
+
+        public Memory<byte> Write(Memory<byte> buffer, bool isLastInPacket)
+        {
+            var ret = Write(buffer, isLastInPacket);
+            return buffer.Slice(buffer.Length - ret.Length);
         }
 
         public Span<byte> Write(Span<byte> buffer, bool isLastInPacket)

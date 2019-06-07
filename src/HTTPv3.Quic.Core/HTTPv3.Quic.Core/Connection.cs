@@ -33,7 +33,8 @@ namespace HTTPv3.Quic
 
         public bool IsServer = false;
 
-        public ConnectionId MyConnectionId {  get { return IsServer ? ServerConnectionId as ConnectionId : ClientConnectionId as ConnectionId; } }
+        public ConnectionId MyConnectionId { get { return IsServer ? ServerConnectionId as ConnectionId : ClientConnectionId as ConnectionId; } }
+        public ConnectionId OtherConnectionId { get { return IsServer ? ClientConnectionId as ConnectionId : ServerConnectionId as ConnectionId; } }
 
         internal CryptoStream InitialStream;
         internal CryptoStream HandshakeStream;

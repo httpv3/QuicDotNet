@@ -10,32 +10,37 @@ namespace HTTPv3.Quic
 {
     internal static class IAsyncEnumerableExtensions
     {
-        public static IAsyncEnumerable<T> Union<T>(this IAsyncEnumerable<T> first, params IAsyncEnumerable<T>[] others)
+        public static IAsyncEnumerable<T> Combine<T>(this IEnumerable<IAsyncEnumerable<T>> streams)
+        {
+            return new AsyncCombinedEnumerable<T>(streams.ToArray());
+        }
+
+        public static IAsyncEnumerable<T> Combine<T>(this IAsyncEnumerable<T> first, IAsyncEnumerable<T> second)
         {
             var list = new List<IAsyncEnumerable<T>>();
             list.Add(first);
-            list.AddRange(others);
+            list.Add(second);
 
-            return new AsyncUnionEnumerable<T>(list.ToArray());
+            return new AsyncCombinedEnumerable<T>(list.ToArray());
         }
     }
 
-    internal class AsyncUnionEnumerable<T> : IAsyncEnumerable<T>
+    internal class AsyncCombinedEnumerable<T> : IAsyncEnumerable<T>
     {
         private IAsyncEnumerable<T>[] streams;
 
-        public AsyncUnionEnumerable(params IAsyncEnumerable<T>[] streams)
+        public AsyncCombinedEnumerable(params IAsyncEnumerable<T>[] streams)
         {
             this.streams = streams;
         }
 
         public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {
-            return new AsyncUnionEnumerator<T>(cancellationToken, streams);
+            return new AsyncCombinedEnumerator<T>(cancellationToken, streams);
         }
     }
 
-    internal class AsyncUnionEnumerator<T> : IAsyncEnumerator<T>
+    internal class AsyncCombinedEnumerator<T> : IAsyncEnumerator<T>
     {
         private IAsyncEnumerator<T>[] streams;
         private List<(IAsyncEnumerator<T> stream, ValueTask<bool> value, Task<bool> task)> tasks;
@@ -43,7 +48,7 @@ namespace HTTPv3.Quic
         private T current = default;
         public T Current => current;
 
-        public AsyncUnionEnumerator(CancellationToken cancellationToken, params IAsyncEnumerable<T>[] streams)
+        public AsyncCombinedEnumerator(CancellationToken cancellationToken, params IAsyncEnumerable<T>[] streams)
         {
             this.streams = streams.Select(s => s.GetAsyncEnumerator(cancellationToken)).ToArray();
         }
