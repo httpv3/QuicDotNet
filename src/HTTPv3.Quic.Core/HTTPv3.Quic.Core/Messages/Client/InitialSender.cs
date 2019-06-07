@@ -12,6 +12,7 @@ namespace HTTPv3.Quic.Messages.Client
 {
     internal class InitialSender
     {
+        public const int BUFFER_SIZE = 1500;
         public const ushort MAX_DATA = 1200;
 
         UdpClient udpClient;
@@ -20,7 +21,7 @@ namespace HTTPv3.Quic.Messages.Client
 
         CryptoStream[] cryptoStreams;
         AvailableFrameInfo[] availableInfo;
-        byte[] packetBuffer = new byte[1500];
+        byte[] packetBuffer = new byte[BUFFER_SIZE];
 
         public InitialSender(UdpClient udpClient, Connection conn)
         {
@@ -59,15 +60,13 @@ namespace HTTPv3.Quic.Messages.Client
             return buffer.Slice(0, buffer.Length - cur.Length);
         }
 
-
-
-        private async Task SendData(Memory<byte> data)
+        public async Task SendData(Memory<byte> data)
         {
             var p = new OutboundInitialPacket(conn, packetNumber++, data);
 
-            var numBytes = p.Write(packetBuffer, conn.KeyManager.Initial).Length;
+            var numBytesLeft = p.Write(packetBuffer, conn.KeyManager.Initial).Length;
 
-            await udpClient.SendAsync(packetBuffer, numBytes);
+            await udpClient.SendAsync(packetBuffer, BUFFER_SIZE - numBytesLeft);
         }
     }
 }

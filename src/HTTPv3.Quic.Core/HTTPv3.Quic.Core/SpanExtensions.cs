@@ -18,14 +18,14 @@ namespace HTTPv3.Quic
             return bytesIn.Slice(bytesToPad);
         }
 
-        public static void PadToLength(this in Span<byte> buffer, in int currentLength, in int padToLength, in byte paddingByte = 0x0)
+        public static Span<byte> PadToLength(this in Span<byte> buffer, in int currentLength, in int padToLength, in byte paddingByte = 0x0)
         {
             if (buffer.Length < padToLength) throw new NotEnoughBytesException($"Expecting {padToLength} bytes but only have {buffer.Length} bytes.");
 
             if (currentLength >= padToLength)
-                return;
+                return buffer.Slice(currentLength);
 
-            buffer.Slice(currentLength).AddPadding(padToLength - currentLength, paddingByte);
+            return buffer.Slice(currentLength).AddPadding(padToLength - currentLength, paddingByte);
         }
 
         public static Span<byte> ReadByte(this in Span<byte> bytesIn, out byte byteToRead)

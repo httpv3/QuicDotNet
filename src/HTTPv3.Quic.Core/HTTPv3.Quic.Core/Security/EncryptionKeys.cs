@@ -38,12 +38,14 @@ namespace HTTPv3.Quic.Security
         public readonly IBufferedCipher Encryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
         public readonly IBufferedCipher Decryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
 
+        readonly ushort keySize;
+
         protected EncryptionKeys(EncryptionState state, in byte[] encSecret, in byte[] decSecret, CipherSuite cipherSuite)
         {
             KeySpace = state;
 
             AronParker.Hkdf.Hkdf hkdf;
-            ushort keySize;
+            
 
             switch (cipherSuite)
             {
@@ -105,19 +107,24 @@ namespace HTTPv3.Quic.Security
 
         public byte[] EncryptPayload(ReadOnlySpan<byte> unprotectedFullHeader, ReadOnlySpan<byte> unprotectedPayload, uint packetNumber)
         {
-            var nonce = packetNumber.ToSpan(DecryptionIV.Length).ToArray();
-            for (int i = 0; i < DecryptionIV.Length; i++)
-                nonce[i] ^= DecryptionIV[i];
+            var nonce = packetNumber.ToSpan(EncryptionIV.Length).ToArray();
+            for (int i = 0; i < EncryptionIV.Length; i++)
+                nonce[i] ^= EncryptionIV[i];
 
             var cipher = new GcmBlockCipher(new AesEngine());
-            var parameters = new AeadParameters(new KeyParameter(DecryptionKey), 128, nonce, unprotectedFullHeader.ToArray());
-            cipher.Init(false, parameters);
+            var parameters = new AeadParameters(new KeyParameter(EncryptionKey), 128, nonce, unprotectedFullHeader.ToArray());
+            cipher.Init(true, parameters);
 
             var encryptedPayload = new byte[cipher.GetOutputSize(unprotectedPayload.Length)];
             var len = cipher.ProcessBytes(unprotectedPayload.ToArray(), 0, unprotectedPayload.Length, encryptedPayload, 0);
             cipher.DoFinal(encryptedPayload, len);
 
             return encryptedPayload;
+        }
+
+        public int GetProtectedLength(int unprotectedLength)
+        {
+            return unprotectedLength + keySize;
         }
 
         private byte[] ExpandLabel(AronParker.Hkdf.Hkdf hkdf, byte[] secret, ushort length, ReadOnlySpan<byte> label)

@@ -71,7 +71,7 @@ namespace HTTPv3.Quic
 
             WriteConnect(buffer, out int len);
 
-            await udpClient.SendAsync(buffer, len);
+            await initialSender.SendData(buffer.AsMemory().Slice(0, len));
         }
 
         internal void WriteConnect(in Span<byte> buffer, out int length)

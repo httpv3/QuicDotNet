@@ -18,7 +18,7 @@ namespace HTTPv3.Quic.Messages.Common
 
         public Span<byte> Write(in Span<byte> buffer, EncryptionKeys keys)
         {
-            byte firstByte = 0xf0;
+            byte firstByte = 0xc0;
             int pnLen = GetPacketNumberLength();
             firstByte |= (byte)pnLen;
 
@@ -26,9 +26,17 @@ namespace HTTPv3.Quic.Messages.Common
 
             cur = base.Write(cur);
 
-            var startOfPN = cur = cur.WriteVarLengthInt(Token.Length)
-                                     .Write(Token)
-                                     .WriteVarLengthInt(pnLen + Payload.Length);
+            if (Token == null)
+            {
+                cur = cur.Write(0x0);
+            }
+            else
+            {
+                cur = cur.WriteVarLengthInt(Token.Length)
+                         .Write(Token);
+            }
+
+            var startOfPN = cur = cur.WriteVarLengthInt(pnLen + keys.GetProtectedLength(Payload.Length));
 
             cur = cur.Write(packetNumber, pnLen);
 

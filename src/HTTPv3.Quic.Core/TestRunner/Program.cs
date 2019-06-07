@@ -12,17 +12,7 @@ namespace TestRunner
 
         static async Task Main(string[] args)
         {
-            EchoTest();
-            //await Run();
-
-            while(true)
-            {
-                var k = Console.ReadKey(true);
-                q.Add('*');
-                q.Add(k.KeyChar);
-                q.Add('*');
-                await Task.Delay(1000);
-            }
+            await Run();
         }
 
         private static async Task EchoTest()
@@ -37,6 +27,8 @@ namespace TestRunner
         {
             QuicClient client = new QuicClient("quic.ogre.com", 4433);
             await client.Connect();
+
+            await Task.Delay(100000000);
 
             //var res = await client.Request("index.html");
         }
