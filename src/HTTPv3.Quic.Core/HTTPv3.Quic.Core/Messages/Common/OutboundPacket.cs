@@ -6,23 +6,25 @@ namespace HTTPv3.Quic.Messages.Common
 {
     abstract class OutboundPacket
     {
-        protected Connection conn;
-        protected ulong packetNumber;
+        public const ulong BYTE_MAX_1 = 0xFF;
+        public const ulong BYTE_MAX_2 = 0xFFFF;
+        public const ulong BYTE_MAX_3 = 0xFFFFFF;
 
-        public OutboundPacket(Connection conn, ulong packetNumber)
+        protected Connection conn;
+        protected uint packetNumber;
+
+        public OutboundPacket(Connection conn, uint packetNumber)
         {
             this.conn = conn;
             this.packetNumber = packetNumber;
         }
 
-        public abstract Span<byte> Write(in Span<byte> buffer);
-
-        protected Span<byte> WritePNandPayload(in Span<byte> buffer, in ReadOnlySpan<byte> payload)
+        protected int GetPacketNumberLength()
         {
-            var pnLen = VariableLengthInt.GetNumberOfBytesNeeded(packetNumber);
-            var len = pnLen + payload.Length;
-            return buffer.WriteVarLengthInt(len)
-                         .Write;
+            if (packetNumber <= BYTE_MAX_1) return 1;
+            if (packetNumber <= BYTE_MAX_2) return 2;
+            if (packetNumber <= BYTE_MAX_3) return 3;
+            return 4;
         }
     }
 }

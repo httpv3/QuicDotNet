@@ -18,27 +18,21 @@ namespace HTTPv3.Quic
         {
             var serverConn = ServerConnectionId.Generate();
 
-            conn = new Connection(serverConn.ConnectionIdBytes, serverName, false, cancel)
-            {
-                ClientConnectionId = ClientConnectionId.Generate(),
-                ServerConnectionId = serverConn,
-                IsServer = false,
-            };
-            conn.Sender = Send;
-
             var addresses = Dns.GetHostAddresses(serverName);
             var remoteEndPoint = new IPEndPoint(addresses[0], port);
 
             udpClient = new UdpClient();
             udpClient.Connect(remoteEndPoint);
 
+            conn = new Connection(serverConn.ConnectionIdBytes, serverName, false, udpClient, cancel)
+            {
+                ClientConnectionId = ClientConnectionId.Generate(),
+                ServerConnectionId = serverConn,
+                IsServer = false,
+            };
+
             //Pipe p = new Pipe();
             //p.Reader.
-        }
-
-        internal async ValueTask Send(byte[] bytes, int length)
-        {
-            await udpClient.SendAsync(bytes, length);
         }
 
         public async Task<ConnectionState> Connect()
@@ -51,29 +45,6 @@ namespace HTTPv3.Quic
         public Task<string> Request(string url)
         {
             return null;
-        }
-
-        private async Task StartListening()
-        {
-            var tcs = new TaskCompletionSource<decimal>();
-
-            cancel.Register(() =>
-            {
-                tcs.TrySetCanceled();
-            });
-
-            while (!cancel.IsCancellationRequested)
-            {
-                var t = udpClient.ReceiveAsync();
-
-                await Task.WhenAny(t, tcs.Task);
-                if (cancel.IsCancellationRequested)
-                    return;
-
-                var res = t.Result;
-
-                //res.Buffer
-            }
         }
     }
 }

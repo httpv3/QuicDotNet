@@ -65,13 +65,13 @@ namespace HTTPv3.Quic.Messages
 
         private void LoadSecrets(Secrets secrets)
         {
-            ClientConnection = new Connection(secrets.Initial.ToByteArrayFromHex().ToArray(), "", false)
+            ClientConnection = new Connection(secrets.Initial.ToByteArrayFromHex().ToArray(), "", false, null)
             {
                 ClientConnectionId = ClientId,
                 ServerConnectionId = ServerId,
             };
 
-            ServerConnection = new Connection(secrets.Initial.ToByteArrayFromHex().ToArray(), "", true)
+            ServerConnection = new Connection(secrets.Initial.ToByteArrayFromHex().ToArray(), "", true, null)
             {
                 ClientConnectionId = ClientId,
                 ServerConnectionId = ServerId,

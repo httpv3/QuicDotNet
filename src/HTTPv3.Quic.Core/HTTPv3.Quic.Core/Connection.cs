@@ -1,4 +1,5 @@
-﻿using HTTPv3.Quic.Messages.Extensions;
+﻿using HTTPv3.Quic.Messages.Client;
+using HTTPv3.Quic.Messages.Extensions;
 using HTTPv3.Quic.Messages.Frames;
 using HTTPv3.Quic.Security;
 using HTTPv3.Quic.TLS;
@@ -6,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,16 +18,14 @@ namespace HTTPv3.Quic
     {
         private const int MINIMUM_INITIAL_PAYLOAD_SIZE = 1180;
 
+        public UdpClient udpClient;
         public CancellationToken Cancel;
 
         public ConnectionState ConnectionState { get; private set; } = ConnectionState.NotConnected;
 
         public ClientConnectionId ClientConnectionId;
         public ServerConnectionId ServerConnectionId;
-        public IPEndPoint RemoteEndPoint;
         public string ServerName;
-
-        public Func<byte[], int, ValueTask> Sender;
 
         internal KeyManager KeyManager;
 
@@ -40,11 +40,16 @@ namespace HTTPv3.Quic
         internal CryptoStream HandshakeStream;
         internal CryptoStream ApplicationStream;
 
-        private Task tlsReaderTask;
+        private Receiver receiver;
+        private InitialSender initialSender;
 
-        internal Connection(byte[] clientChosenDestinationId, string serverName, bool isServer, CancellationToken cancel = default)
+        private Task receiverTask;
+        private Task senderTask;
+
+        internal Connection(byte[] clientChosenDestinationId, string serverName, bool isServer, UdpClient udpClient, CancellationToken cancel = default)
         {
-            this.Cancel = cancel;
+            this.udpClient = udpClient;
+            Cancel = cancel;
             ServerName = serverName;
             IsServer = isServer;
 
@@ -56,7 +61,8 @@ namespace HTTPv3.Quic
 
             TLSConn = new TLS.ClientConnection(InitialStream, HandshakeStream, ApplicationStream, cancel);
 
-            tlsReaderTask = StartReadingFromTLS();
+            receiverTask = StartReceiving();
+            senderTask = StartSending();
         }
 
         internal async Task SendConnect()
@@ -65,7 +71,7 @@ namespace HTTPv3.Quic
 
             WriteConnect(buffer, out int len);
 
-            await Sender(buffer, len);
+            await udpClient.SendAsync(buffer, len);
         }
 
         internal void WriteConnect(in Span<byte> buffer, out int length)
@@ -87,12 +93,17 @@ namespace HTTPv3.Quic
             length = MINIMUM_INITIAL_PAYLOAD_SIZE;
         }
 
-        private async Task StartReadingFromTLS()
+        private Task StartReceiving()
         {
-            //await foreach (var r in RawRecord.ReadRecords(reader, cancel))
-            //{
-            //    var msg = Handshake.Parse(r);
-            //}
+            receiver = new Receiver(udpClient, this);
+            return receiver.Run();
+        }
+
+        private Task StartSending()
+        {
+            initialSender = new InitialSender(udpClient, this);
+
+            return Task.WhenAll(initialSender.Run());
         }
     }
 }

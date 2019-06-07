@@ -8,9 +8,9 @@ namespace HTTPv3.Quic.Messages.Common
     {
         public const uint CURRENT_VERSION = (uint)VersionTypes.Draft_19;
 
-        public OutboundLongPacket(Connection conn) : base(conn) { }
+        public OutboundLongPacket(Connection conn, uint packetNumber) : base(conn, packetNumber) { }
 
-        public override Span<byte> Write(in Span<byte> buffer)
+        protected Span<byte> Write(in Span<byte> buffer)
         {
             var cur = buffer.Write(CURRENT_VERSION)
                             .Write((byte)((conn.OtherConnectionId.LengthByte << Header.DCIL_Shift) | conn.MyConnectionId.LengthByte));
