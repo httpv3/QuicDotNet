@@ -20,8 +20,15 @@ namespace HTTPv3.Quic.Messages.Client
 
         public async Task Run()
         {
+            await foreach (var stream in CryptoStreams)
+            {
+
+            }
         }
 
-        private IAsyncEnumerable<(CryptoStream, long)> CryptoStreams => conn.InitialStream.GetNumBytesAvailable().;
+        private IAsyncEnumerable<(CryptoStream, long)> CryptoStreams => conn.InitialStream.GetNumBytesAvailable().Union(
+                                                                            conn.HandshakeStream.GetNumBytesAvailable(),
+                                                                            conn.ApplicationStream.GetNumBytesAvailable()
+                                                                        );
     }
 }

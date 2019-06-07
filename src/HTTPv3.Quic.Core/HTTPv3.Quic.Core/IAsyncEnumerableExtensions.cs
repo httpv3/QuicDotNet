@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Sources;
 
 namespace HTTPv3.Quic
 {
@@ -15,7 +16,7 @@ namespace HTTPv3.Quic
             list.Add(first);
             list.AddRange(others);
 
-            return new AsyncUnionEnumerable<T>(list);
+            return new AsyncUnionEnumerable<T>(list.ToArray());
         }
     }
 
@@ -55,9 +56,9 @@ namespace HTTPv3.Quic
         public async ValueTask<bool> MoveNextAsync()
         {
             if (tasks == null)
-                tasks = streams.Select(s=> { var val = s.MoveNextAsync(); return (s, val, val.AsTask()); }).ToList();
+                tasks = streams.Select(s => GetTask(s)).ToList();
 
-            while (tasks.Count > 0)
+            if (tasks.Count > 0)
             {
                 var t = await Task.WhenAny(tasks.Select(p => p.task));
 
@@ -66,16 +67,16 @@ namespace HTTPv3.Quic
                 current = next.stream.Current;
 
                 if (t.Result) // There is more
-                    tasks.Add();
-
-                yield return next.value;
+                    tasks.Add(GetTask(next.stream));
             }
+
+            return tasks.Count > 0;
         }
 
-        private (IAsyncEnumerator<T> stream, ValueTask<bool> value, Task<bool> task)GetTask(IAsyncEnumerator<T> stream)
+        private (IAsyncEnumerator<T> stream, ValueTask<bool> value, Task<bool> task) GetTask(IAsyncEnumerator<T> stream)
         {
-            var val = s.MoveNextAsync();
-            return (s, val, val.AsTask());
+            var val = stream.MoveNextAsync();
+            return (stream, val, val.AsTask());
         }
     }
 }
