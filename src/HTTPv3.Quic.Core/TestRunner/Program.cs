@@ -10,9 +10,10 @@ namespace TestRunner
     {
         static AwaitableQueue<char> q = new AwaitableQueue<char>();
 
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            await Run();
+            KeyCreate.KeyGen();
+            //await Run();
         }
 
         private static async Task EchoTest()
