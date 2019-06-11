@@ -12,8 +12,10 @@ using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Agreement;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.X509;
 
@@ -58,12 +60,12 @@ namespace HTTPv3.Quic.TLS
                 ServerName = serverName,
             };
 
-            hello.CipherSuites.Add(CipherSuite.TLS_AES_256_GCM_SHA384);
+            hello.CipherSuites.AddRange(new[] { CipherSuite.TLS_AES_256_GCM_SHA384, CipherSuite.TLS_AES_128_GCM_SHA256, CipherSuite.TLS_CHACHA20_POLY1305_SHA256 });
             hello.ALPN.Add("h3-20");
             hello.SupportedVersions.Add(ProtocolVersion.TLSv1_3);
             hello.SupportedGroups.Add(NamedGroup.secp256r1);
-            hello.SignatureAlgorithms.Add(SignatureScheme.ecdsa_secp256r1_sha256);
-            hello.PskKeyExchangeModes.Add(PskKeyExchangeMode.PSKwithDheKeyEstablishment);
+            hello.SignatureAlgorithms.AddRange(new[] { SignatureScheme.rsa_pss_rsae_sha256, SignatureScheme.ecdsa_secp256r1_sha256, SignatureScheme.rsa_pkcs1_sha256, SignatureScheme.rsa_pkcs1_sha1 });
+            hello.PskKeyExchangeModes.AddRange(new[] { PskKeyExchangeMode.PSKwithDheKeyEstablishment });
             hello.UnknownExtensions.AddRange(unknownExtensions);
 
             hello.KeyShares.Add(CreateKeyShare());
@@ -73,18 +75,13 @@ namespace HTTPv3.Quic.TLS
 
         private KeyShare CreateKeyShare()
         {
-            var key = new byte[65];
-
-            IAsymmetricCipherKeyPairGenerator bcKpGen = GeneratorUtilities.GetKeyPairGenerator("ECDSA");
-            bcKpGen.Init(new ECKeyGenerationParameters(SecObjectIdentifiers.SecP256r1, prng));
-            AsymmetricCipherKeyPair pair = bcKpGen.GenerateKeyPair();
-
-            SubjectPublicKeyInfo info = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(pair.Public);
+            var key = CngKey.Create(CngAlgorithm.ECDiffieHellmanP256);
+            var tlsKey = key.ToTLSPublicKey();
 
             return new KeyShare()
             {
                 Group = NamedGroup.secp256r1,
-                KeyExchange = info.PublicKeyData.GetBytes(),
+                KeyExchange = tlsKey
             };
         }
     }

@@ -197,12 +197,12 @@ namespace HTTPv3.Quic.Messages.Extensions
                 if (DisableMigration)
                     buf = buf.WriteParameterValue(TransportParameterId.DisableMigration, (x,y) => { });
 
-                if (PreferredAddress != null)
-                    buf = buf.WriteParameterValue(TransportParameterId.PreferredAddress, (buf, state) =>
-                                {
-                                    buf = PreferredAddress.Write(buf);
-                                    state.EndLength = buf.Length;
-                                });
+                //if (PreferredAddress != null)
+                //    buf = buf.WriteParameterValue(TransportParameterId.PreferredAddress, (buf2, state2) =>
+                //                {
+                //                    buf2 = PreferredAddress.Write(buf2);
+                //                    state2.EndLength = buf2.Length;
+                //                });
 
                 state.EndLength = buf.Length;
             });

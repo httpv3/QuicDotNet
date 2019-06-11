@@ -108,14 +108,19 @@ namespace HTTPv3.Quic.TLS.Messages
             if (LegacySessionId == null || LegacySessionId.Length != Random_NumBytes)
                 LegacySessionId = SecureRandom.GetNextBytes(prng, LegacySessionId_NumBytes);
 
-            return buffer.Write(ProtocolVersion.TLSv1_2)                                          // legacy_version 
-                         .Write(Random)                                                           // random
-                         .WriteTLSVariableLength(LegacySessionIdLength_NumBytes, LegacySessionId) // legacy_session_id
-                         .Write(CipherSuites)                                                     // cipher_suites
-                         .Write(0x1).Write(0x0)                                                   // legacy_compression_methods
-                         .WriteVector(ExtensionsLength_NumBytes, (buf, state) =>
+            return buffer.Write((byte)HandshakeType.ClientHello)
+                         .WriteVector(Handshake.Length_NumBytes, (buf, state) =>
                          {
-                             buf = WriteExtensions(buf);
+                             buf = buf.Write(ProtocolVersion.TLSv1_2)                                          // legacy_version 
+                                      .Write(Random)                                                           // random
+                                      .WriteTLSVariableLength(LegacySessionIdLength_NumBytes, LegacySessionId) // legacy_session_id
+                                      .Write(CipherSuites)                                                     // cipher_suites
+                                      .Write(0x1).Write(0x0)                                                   // legacy_compression_methods
+                                      .WriteVector(ExtensionsLength_NumBytes, (buf2, state2) =>
+                                      {
+                                          buf2 = WriteExtensions(buf2);
+                                          state2.EndLength = buf2.Length;
+                                      });
                              state.EndLength = buf.Length;
                          });
         }
@@ -189,8 +194,7 @@ namespace HTTPv3.Quic.TLS.Messages
             foreach (var ext in UnknownExtensions)
                 data = data.WriteExtension(ext.ExtensionType, (buf, state) =>
                 {
-                    buf = buf.Write(ext.ExtensionType)
-                             .Write(ext.Bytes);
+                    buf = buf.Write(ext.Bytes);
                     state.EndLength = buf.Length;
                 });
 

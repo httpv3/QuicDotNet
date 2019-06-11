@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -19,7 +20,7 @@ namespace HTTPv3.Quic
             var serverConn = ServerConnectionId.Generate();
 
             var addresses = Dns.GetHostAddresses(serverName);
-            var remoteEndPoint = new IPEndPoint(addresses[0], port);
+            var remoteEndPoint = new IPEndPoint(addresses.First(a => a.AddressFamily == AddressFamily.InterNetwork), port);
 
             udpClient = new UdpClient();
             udpClient.Connect(remoteEndPoint);

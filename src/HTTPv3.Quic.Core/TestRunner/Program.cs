@@ -10,10 +10,10 @@ namespace TestRunner
     {
         static AwaitableQueue<char> q = new AwaitableQueue<char>();
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            KeyCreate.KeyGen();
-            //await Run();
+            //KeyCreate.KeyGen();
+            await Run();
         }
 
         private static async Task EchoTest()
@@ -26,7 +26,7 @@ namespace TestRunner
 
         async static Task Run()
         {
-            QuicClient client = new QuicClient("quic.ogre.com", 4433);
+            QuicClient client = new QuicClient("http3-test.litespeedtech.com", 4433);
             await client.Connect();
 
             await Task.Delay(100000000);

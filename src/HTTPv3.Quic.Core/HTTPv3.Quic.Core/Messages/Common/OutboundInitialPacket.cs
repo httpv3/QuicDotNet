@@ -20,7 +20,7 @@ namespace HTTPv3.Quic.Messages.Common
         {
             byte firstByte = 0xc0;
             int pnLen = GetPacketNumberLength();
-            firstByte |= (byte)pnLen;
+            firstByte |= (byte)(pnLen - 1);
 
             var cur = buffer.Write(firstByte);
 
