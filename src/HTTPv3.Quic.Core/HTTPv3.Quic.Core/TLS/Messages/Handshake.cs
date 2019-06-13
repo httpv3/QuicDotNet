@@ -22,7 +22,7 @@ namespace HTTPv3.Quic.TLS.Messages
                 case HandshakeType.ClientHello:
                     return ClientHello.Parse(r.Data);
                 case HandshakeType.ServerHello:
-                    return new ServerHello(r.Data);
+                    return ServerHello.Parse(r.Data);
                 case HandshakeType.EncryptedExtensions:
                     return new EncryptedExtensions(r.Data);
                 case HandshakeType.Certificate:

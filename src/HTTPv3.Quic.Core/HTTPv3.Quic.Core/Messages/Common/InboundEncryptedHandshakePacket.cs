@@ -21,9 +21,10 @@ namespace HTTPv3.Quic.Messages.Common
 
         public override InboundPacket AsDecryptedPacket(KeyManager keyMan)
         {
-            var keys = keyMan.Handshake;
-            RemoveHeaderProtection(keys);
-            return new InboundPacket(this, keys);
+            return null;
+            //var keys = keyMan.Handshake;
+            //RemoveHeaderProtection(keys);
+            //return new InboundPacket(this, keys);
         }
     }
 }

@@ -51,7 +51,18 @@ namespace HTTPv3.Quic.Messages.Common
         {
             await foreach (var p in encPackets)
             {
-                    yield return p.AsDecryptedPacket(keyMan);
+                InboundPacket d = null;
+                try
+                {
+                    d = p.AsDecryptedPacket(keyMan);
+                }
+                catch
+                {
+
+                }
+
+                if (d != null)
+                    yield return d;
             }
         }
     }

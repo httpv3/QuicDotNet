@@ -92,7 +92,7 @@ namespace HTTPv3.Quic.Messages.Extensions
 
             ReadOnlySpan<byte> data = ext.Bytes;
 
-            data.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+            data.ReadNextTLSVariableLength(ArrayLength_NumBytes, out ReadOnlySpan<byte> arrData);
 
             while (!arrData.IsEmpty)
             {
@@ -117,7 +117,7 @@ namespace HTTPv3.Quic.Messages.Extensions
         private void ParseParameter(ref ReadOnlySpan<byte> data)
         {
             data = data.Read(Extension.Type_NumBytes, out ushort typeInt)
-                       .ReadNextTLSVariableLength(Extension.Length_NumBytes, out var extBytes);
+                       .ReadNextTLSVariableLength(Extension.Length_NumBytes, out ReadOnlySpan<byte> extBytes);
 
             TransportParameterId type = (TransportParameterId)typeInt;
 

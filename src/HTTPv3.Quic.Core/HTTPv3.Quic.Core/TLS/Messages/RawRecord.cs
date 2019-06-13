@@ -19,10 +19,12 @@ namespace HTTPv3.Quic.TLS.Messages
         {
             while (!cancel.IsCancellationRequested)
             {
+                var handshakeType = (HandshakeType)await reader.ReadByte(cancel);
+                var data = await reader.ReadTLSData(Length_NumBytes, cancel);
                 yield return new RawRecord()
                 {
-                    HandshakeType = (HandshakeType)await reader.ReadByte(cancel),
-                    Data = await reader.ReadTLSData(Length_NumBytes, cancel)
+                    HandshakeType = handshakeType,
+                    Data = data
                 };
             }
         }

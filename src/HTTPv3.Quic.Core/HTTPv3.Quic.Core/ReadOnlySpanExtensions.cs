@@ -53,6 +53,15 @@ namespace HTTPv3.Quic
             return bytesIn.Slice(numBytes);
         }
 
+        public static ReadOnlySpan<byte> ReadNextTLSVariableLength(this ReadOnlySpan<byte> bytesIn, int lengthNumBytes, out byte[] bytesOut)
+        {
+            var ret = bytesIn.ReadNextTLSVariableLength(lengthNumBytes, out ReadOnlySpan<byte> span);
+
+            bytesOut = span.ToArray();
+
+            return ret;
+        }
+
         public static ReadOnlySpan<byte> ReadNextTLSVariableLength(this ReadOnlySpan<byte> bytesIn, int lengthNumBytes, out ReadOnlySpan<byte> bytesOut)
         {
             if (bytesIn.Length < lengthNumBytes) throw new NotEnoughBytesException($"Expecting {lengthNumBytes} bytes but only have {bytesIn.Length} bytes left.");

@@ -46,7 +46,7 @@ namespace HTTPv3.Quic.Messages.Extensions
                  .Read(Port_NumBytes, out ret.IPv4Port)
                  .Read(IPv6Address_NumBytes, out ret.IPv6Address)
                  .Read(Port_NumBytes, out ret.IPv6Port)
-                 .ReadNextTLSVariableLength(ConnectionIdLength_NumBytes, out var connBytes)
+                 .ReadNextTLSVariableLength(ConnectionIdLength_NumBytes, out ReadOnlySpan<byte> connBytes)
                  .Read(StatelessResetToken_NumBytes, out ret.StatelessResetToken);
 
             ret.ConnectionId = connBytes.Length == 0 ? ConnectionId.Empty : new ConnectionId(connBytes.ToArray());

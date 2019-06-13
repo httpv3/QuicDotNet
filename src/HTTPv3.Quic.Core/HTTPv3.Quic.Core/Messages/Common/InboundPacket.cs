@@ -33,15 +33,23 @@ namespace HTTPv3.Quic.Messages.Common
 
                 cur = cur.Read(out FrameType type);
 
-                switch(type)
+                try
                 {
-                    case FrameType.Padding:
-                        continue;
-                    case FrameType.Crypto:
-                        cur = CryptoFrame.Parse(cur, out f);
-                        break;
-                    default:
-                        throw new NotImplementedException();
+                    switch (type)
+                    {
+                        case FrameType.Padding:
+                            continue;
+                        case FrameType.Crypto:
+                            cur = CryptoFrame.Parse(cur, out f);
+                            break;
+                        default:
+                            cur = default;
+                            break;
+                    }
+                }
+                catch
+                {
+
                 }
 
                 if (f != null)

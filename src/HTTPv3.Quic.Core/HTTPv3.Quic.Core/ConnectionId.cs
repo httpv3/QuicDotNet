@@ -1,7 +1,7 @@
-﻿using Org.BouncyCastle.Security;
-using System;
+﻿using System;
 using System.Data.HashFunction.FNV;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace HTTPv3.Quic
 {
@@ -10,7 +10,6 @@ namespace HTTPv3.Quic
         public readonly static ConnectionId Empty = new ConnectionId(new byte[0]);
 
         public const int DefaultLength = 4;
-        private static SecureRandom prng = new SecureRandom();
         private static IFNV1 Hasher = FNV1Factory.Instance.Create(FNVConfig.GetPredefinedConfig(32));
 
         public readonly byte[] ConnectionIdBytes;
@@ -38,7 +37,11 @@ namespace HTTPv3.Quic
 
         protected static byte[] GenerateBytes(int length = DefaultLength)
         {
-            return SecureRandom.GetNextBytes(prng, length);
+            var bytes = new byte[length];
+
+            RandomNumberGenerator.Fill(bytes);
+
+            return bytes;
         }
 
         public override int GetHashCode()

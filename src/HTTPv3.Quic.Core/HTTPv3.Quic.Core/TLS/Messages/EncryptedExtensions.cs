@@ -22,12 +22,12 @@ namespace HTTPv3.Quic.TLS.Messages
 
         public EncryptedExtensions(ReadOnlySpan<byte> data) : base(HandshakeType.EncryptedExtensions)
         {
-            data = data.ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out var extensionBytes);
+            data = data.ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out ReadOnlySpan<byte> extensionBytes);
 
             while (!extensionBytes.IsEmpty)
             {
                 extensionBytes = extensionBytes.Read(out ExtensionType type)
-                                               .ReadNextTLSVariableLength(Extension.Length_NumBytes, out var extBytes);
+                                               .ReadNextTLSVariableLength(Extension.Length_NumBytes, out ReadOnlySpan<byte> extBytes);
             }
         }
     }

@@ -1,9 +1,8 @@
 ﻿using HTTPv3.Quic.Messages.Extensions;
 using HTTPv3.Quic.TLS.Messages.Extensions;
-using Org.BouncyCastle.Security;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Security.Cryptography;
 
 namespace HTTPv3.Quic.TLS.Messages
 {
@@ -17,8 +16,6 @@ namespace HTTPv3.Quic.TLS.Messages
         public const int LegacySessionIdLength_NumBytes = 1;
         public const int LegacyCompressionMethods_NumBytes = 2;
         public const int ExtensionsLength_NumBytes = 2;
-
-        private static SecureRandom prng = new SecureRandom();
 
         public byte[] Random = null;
         public byte[] LegacySessionId = null;
@@ -45,13 +42,11 @@ namespace HTTPv3.Quic.TLS.Messages
 
             data = data.Read(out ret.LegacyVersion)
                        .Read(Random_NumBytes, out ret.Random)
-                       .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out var legacySessionId)
+                       .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out ret.LegacySessionId)
                        .Read(ret.CipherSuites);
 
-            ret.LegacySessionId = legacySessionId.ToArray();
-
             data = data.Read(LegacyCompressionMethods_NumBytes, out ReadOnlySpan<byte> _)
-                       .ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out var extensionBytes);
+                       .ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out ReadOnlySpan<byte> extensionBytes);
 
             while (!extensionBytes.IsEmpty)
             {
@@ -89,12 +84,12 @@ namespace HTTPv3.Quic.TLS.Messages
                     extBytes.ReadALPN(ALPN);
                     break;
                 default:
-                    extBytes = extBytes.ReadNextTLSVariableLength(UnknownExtension.ArrayLength_NumBytes, out var bytes);
+                    extBytes.ReadNextTLSVariableLength(UnknownExtension.ArrayLength_NumBytes, out byte[] bytes);
 
                     UnknownExtensions.Add(new UnknownExtension()
                     {
                         ExtensionType = (ushort)type,
-                        Bytes = bytes.ToArray(),
+                        Bytes = bytes,
                     });
 
                     break;
@@ -104,9 +99,15 @@ namespace HTTPv3.Quic.TLS.Messages
         public Span<byte> Write(in Span<byte> buffer)
         {
             if (Random == null || Random.Length != Random_NumBytes)
-                Random = SecureRandom.GetNextBytes(prng, Random_NumBytes);
-            if (LegacySessionId == null || LegacySessionId.Length != Random_NumBytes)
-                LegacySessionId = SecureRandom.GetNextBytes(prng, LegacySessionId_NumBytes);
+            {
+                Random = new byte[Random_NumBytes];
+                RandomNumberGenerator.Fill(Random);
+            }
+            if (LegacySessionId == null || LegacySessionId.Length != LegacySessionId_NumBytes)
+            {
+                LegacySessionId = new byte[LegacySessionId_NumBytes];
+                RandomNumberGenerator.Fill(LegacySessionId);
+            }
 
             return buffer.Write((byte)HandshakeType.ClientHello)
                          .WriteVector(Handshake.Length_NumBytes, (buf, state) =>

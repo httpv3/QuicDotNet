@@ -32,25 +32,27 @@ namespace HTTPv3.Quic
                     continue;
                 }
 
-                var data = buffer.Slice(0, numBytes);
+                var data = buffer.Slice(0, numBytes).ToArray();
 
                 var next = buffer.GetPosition(numBytes);
 
                 reader.AdvanceTo(next);
 
-                return data.ToArray();
+                Console.WriteLine(data.Length);
+
+                return data;
             }
         }
 
-        public static async Task<int> ReadInt(this PipeReader reader, int numBytes, CancellationToken cancel)
+        public static async Task<uint> ReadUInt32(this PipeReader reader, int numBytes, CancellationToken cancel)
         {
-            return (await reader.ReadBytes(numBytes, cancel)).ToInt32();
+            return (await reader.ReadBytes(numBytes, cancel)).AsSpan().ToUInt32();
         }
-
 
         public static async Task<byte[]> ReadTLSData(this PipeReader reader, int lengthNumBytes, CancellationToken cancel)
         {
-            int length = await reader.ReadInt(lengthNumBytes, cancel);
+            int length = (int)(await reader.ReadUInt32(lengthNumBytes, cancel));
+            Console.WriteLine(length);
             return await reader.ReadBytes(length, cancel);
         }
     }

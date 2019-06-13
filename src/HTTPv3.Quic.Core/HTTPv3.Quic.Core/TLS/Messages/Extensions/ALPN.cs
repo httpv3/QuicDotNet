@@ -11,7 +11,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
         public static ReadOnlySpan<byte> ReadALPN(this in ReadOnlySpan<byte> bytesIn, out string alpn)
         {
-            var ret = bytesIn.ReadNextTLSVariableLength(ALPNLength_NumBytes, out var bytes);
+            var ret = bytesIn.ReadNextTLSVariableLength(ALPNLength_NumBytes, out ReadOnlySpan<byte> bytes);
 
             alpn = Encoding.ASCII.GetString(bytes.ToArray());
 
@@ -20,7 +20,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
         public static ReadOnlySpan<byte> ReadALPN(this in ReadOnlySpan<byte> bytesIn, in List<string> list)
         {
-            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out ReadOnlySpan<byte> arrData);
 
             while (!arrData.IsEmpty)
             {

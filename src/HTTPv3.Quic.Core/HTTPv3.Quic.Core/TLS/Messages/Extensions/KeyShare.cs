@@ -33,7 +33,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
             namedGroup = new KeyShare();
 
             var ret = bytesIn.Read(out namedGroup.Group)
-                          .ReadNextTLSVariableLength(Length_NumBytes, out var keyData);
+                          .ReadNextTLSVariableLength(Length_NumBytes, out ReadOnlySpan<byte> keyData);
 
             namedGroup.KeyExchange = keyData.ToArray();
 
@@ -42,7 +42,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
         public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, in List<KeyShare> list)
         {
-            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out ReadOnlySpan<byte> arrData);
 
             while (!arrData.IsEmpty)
             {

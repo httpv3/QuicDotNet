@@ -1,14 +1,7 @@
 ﻿using HTTPv3.Quic.TLS;
 using HTTPv3.Quic.TLS.Messages.Extensions;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Engines;
-using Org.BouncyCastle.Crypto.Modes;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Security;
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace HTTPv3.Quic.Security
 {
@@ -35,8 +28,8 @@ namespace HTTPv3.Quic.Security
         public readonly byte[] DecryptionIV;
         public readonly byte[] DecryptionHP;
 
-        public readonly IBufferedCipher Encryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
-        public readonly IBufferedCipher Decryption_AES_ECB = CipherUtilities.GetCipher("AES/ECB/NoPadding");
+        public readonly ICryptoTransform Encryption_AES_ECB;
+        public readonly ICryptoTransform Decryption_AES_ECB;
 
         readonly ushort keySize;
 
@@ -70,20 +63,29 @@ namespace HTTPv3.Quic.Security
             DecryptionIV = ExpandLabel(hkdf, decSecret, 12, QuicIV);
             DecryptionHP = ExpandLabel(hkdf, decSecret, keySize, QuicHP);
 
-            Encryption_AES_ECB.Init(true, new KeyParameter(EncryptionHP));
-            Decryption_AES_ECB.Init(true, new KeyParameter(DecryptionHP));
+            var aes = Aes.Create();
+//            aes.BlockSize = keySize;
+            aes.Mode = CipherMode.ECB;
+            aes.Padding = PaddingMode.None;
+
+            aes.GenerateIV();
+
+            var key = EncryptionHP;
+
+            Encryption_AES_ECB = aes.CreateEncryptor(EncryptionHP, aes.IV);
+            Decryption_AES_ECB = aes.CreateEncryptor(DecryptionHP, aes.IV);
         }
 
         public ReadOnlySpan<byte> ComputeDecryptionHeaderProtectionMask(ReadOnlySpan<byte> sample)
         {
-            var bytes = Decryption_AES_ECB.ProcessBytes(sample.ToArray());
+            var bytes = Decryption_AES_ECB.TransformFinalBlock(sample.ToArray(), 0, sample.Length);
 
             return new ReadOnlySpan<byte>(bytes, 0, 5);
         }
 
         public ReadOnlySpan<byte> ComputeEncryptionHeaderProtectionMask(ReadOnlySpan<byte> sample)
         {
-            var bytes = Encryption_AES_ECB.ProcessBytes(sample.ToArray());
+            var bytes = Encryption_AES_ECB.TransformFinalBlock(sample.ToArray(), 0, sample.Length);
 
             return new ReadOnlySpan<byte>(bytes, 0, 5);
         }
@@ -94,15 +96,15 @@ namespace HTTPv3.Quic.Security
             for (int i = 0; i < DecryptionIV.Length; i++)
                 nonce[i] ^= DecryptionIV[i];
 
-            var cipher = new GcmBlockCipher(new AesEngine());
-            var parameters = new AeadParameters(new KeyParameter(DecryptionKey), 128, nonce, unprotectedFullHeader);
-            cipher.Init(false, parameters);
+            var tag = encryptedPayload.Read(encryptedPayload.Length - keySize, out ReadOnlySpan<byte> cipherText);
+            var plainText = new byte[cipherText.Length];
 
-            var payload = new byte[cipher.GetOutputSize(encryptedPayload.Length)];
-            var len = cipher.ProcessBytes(encryptedPayload.ToArray(), 0, encryptedPayload.Length, payload, 0);
-            cipher.DoFinal(payload, len);
+            using (AesGcm aesGcm = new AesGcm(DecryptionKey))
+            {
+                aesGcm.Decrypt(nonce, cipherText, tag, plainText, unprotectedFullHeader);
+            }
 
-            return payload;
+            return plainText;
         }
 
         public byte[] EncryptPayload(ReadOnlySpan<byte> unprotectedFullHeader, ReadOnlySpan<byte> unprotectedPayload, uint packetNumber)
@@ -111,13 +113,14 @@ namespace HTTPv3.Quic.Security
             for (int i = 0; i < EncryptionIV.Length; i++)
                 nonce[i] ^= EncryptionIV[i];
 
-            var cipher = new GcmBlockCipher(new AesEngine());
-            var parameters = new AeadParameters(new KeyParameter(EncryptionKey), 128, nonce, unprotectedFullHeader.ToArray());
-            cipher.Init(true, parameters);
+            var encryptedPayload = new byte[GetProtectedLength(unprotectedPayload.Length)];
 
-            var encryptedPayload = new byte[cipher.GetOutputSize(unprotectedPayload.Length)];
-            var len = cipher.ProcessBytes(unprotectedPayload.ToArray(), 0, unprotectedPayload.Length, encryptedPayload, 0);
-            cipher.DoFinal(encryptedPayload, len);
+            var tag = encryptedPayload.AsSpan().ReadBytes(unprotectedPayload.Length, out Span<byte> cipherText);
+
+            using (AesGcm aesGcm = new AesGcm(EncryptionKey))
+            {
+                aesGcm.Encrypt(nonce, unprotectedPayload, cipherText, tag, unprotectedFullHeader);
+            }
 
             return encryptedPayload;
         }

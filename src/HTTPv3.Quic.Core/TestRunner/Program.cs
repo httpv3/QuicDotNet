@@ -12,7 +12,6 @@ namespace TestRunner
 
         static async Task Main(string[] args)
         {
-            //KeyCreate.KeyGen();
             await Run();
         }
 

@@ -28,7 +28,7 @@ namespace HTTPv3.Quic
             AvailableInfo = new AvailableFrameInfo(this);
         }
 
-        public PipeReader Reader => toApp.Reader;
+        public PipeReader Input => toApp.Reader;
         public PipeWriter Output => fromApp.Writer;
 
         internal async Task AddFrame(CryptoFrame frame)

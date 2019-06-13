@@ -13,7 +13,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
         public static ReadOnlySpan<byte> ReadServerNameSingle(this in ReadOnlySpan<byte> bytesIn, out string hostName)
         {
-            var ret = bytesIn.ReadNextTLSVariableLength(NameLength_NumBytes, out var bytes);
+            var ret = bytesIn.ReadNextTLSVariableLength(NameLength_NumBytes, out ReadOnlySpan<byte> bytes);
 
             hostName = Encoding.ASCII.GetString(bytes.ToArray());
 
@@ -24,12 +24,12 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
         {
             hostName = "";
 
-            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out ReadOnlySpan<byte> arrData);
 
             while (!arrData.IsEmpty)
             {
                 arrData = arrData.Read(out byte type)
-                                 .ReadNextTLSVariableLength(NameLength_NumBytes, out var name);
+                                 .ReadNextTLSVariableLength(NameLength_NumBytes, out ReadOnlySpan<byte> name);
 
                 if (type == HostNameType)
                     hostName = Encoding.ASCII.GetString(name.ToArray());

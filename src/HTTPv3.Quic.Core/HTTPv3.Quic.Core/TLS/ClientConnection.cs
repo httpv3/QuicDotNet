@@ -6,51 +6,36 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HTTPv3.Quic.Messages.Extensions;
+using HTTPv3.Quic.TLS.Client;
 using HTTPv3.Quic.TLS.Messages;
 using HTTPv3.Quic.TLS.Messages.Extensions;
-using Org.BouncyCastle.Asn1.Sec;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Asn1.X9;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Agreement;
-using Org.BouncyCastle.Crypto.Generators;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Security;
-using Org.BouncyCastle.X509;
 
 namespace HTTPv3.Quic.TLS
 {
     internal class ClientConnection
     {
-        private static SecureRandom prng = new SecureRandom();
+        public CancellationToken cancel;
 
-        private CancellationToken cancel;
+        private InitialProcessor InitialStream;
 
-        private CryptoStream InitialStream;
-        private CryptoStream HandshakeStream;
-        private CryptoStream ApplicationStream;
+        public CipherSuite SelectedCipherSuite;
+        public CngKey MyKey;
+        public KeyShare MyKeyShare;
 
         Task readerTask;
 
         public ClientConnection(CryptoStream initial, CryptoStream handshake, CryptoStream application, CancellationToken cancel)
         {
-            InitialStream = initial;
-            HandshakeStream = handshake;
-            ApplicationStream = application;
             this.cancel = cancel;
+
+            InitialStream = new InitialProcessor(this, initial);
 
             readerTask = StartReading();
         }
 
-        private async Task StartReading()
+        private Task StartReading()
         {
-            //await foreach (var r in RawRecord.ReadRecords(reader, cancel))
-            //{
-            //    var msg = Handshake.Parse(r);
-            //    //if (msg != null)
-            //    //    msg.Process(this);
-            //}
+            return Task.WhenAll(InitialStream.Run());
         }
 
         internal Span<byte> WriteClientHello(in Span<byte> buffer, string serverName, params UnknownExtension[] unknownExtensions)
@@ -68,15 +53,16 @@ namespace HTTPv3.Quic.TLS
             hello.PskKeyExchangeModes.AddRange(new[] { PskKeyExchangeMode.PSKwithDheKeyEstablishment });
             hello.UnknownExtensions.AddRange(unknownExtensions);
 
-            hello.KeyShares.Add(CreateKeyShare());
+            MyKeyShare = CreateKeyShare();
+            hello.KeyShares.Add(MyKeyShare);
 
             return hello.Write(buffer);
         }
 
         private KeyShare CreateKeyShare()
         {
-            var key = CngKey.Create(CngAlgorithm.ECDiffieHellmanP256);
-            var tlsKey = key.ToTLSPublicKey();
+            MyKey = CngKey.Create(CngAlgorithm.ECDiffieHellmanP256);
+            var tlsKey = MyKey.ToTLSPublicKey();
 
             return new KeyShare()
             {

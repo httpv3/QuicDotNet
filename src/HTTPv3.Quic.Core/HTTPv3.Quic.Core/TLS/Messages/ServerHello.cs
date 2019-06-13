@@ -17,23 +17,62 @@ namespace HTTPv3.Quic.TLS.Messages
         public const int LegacyCompressionMethod_NumBytes = 1;
         public const int ExtensionsLength_NumBytes = 2;
 
-        public ushort ProtocolVersion;
+        public ProtocolVersion ProtocolVersion;
         public byte[] Random;
+        public byte[] LegacySessionId;
+        public CipherSuite CipherSuite;
 
-        public ServerHello(ReadOnlySpan<byte> data) : base(HandshakeType.ServerHello)
+        public KeyShare KeyShare;
+        public ProtocolVersion SupportedVersion;
+        public List<UnknownExtension> UnknownExtensions = new List<UnknownExtension>();
+
+        public ServerHello() : base(HandshakeType.ServerHello)
         {
-            data = data.Read(ProtocolVersion_NumBytes, out ProtocolVersion)
-                       .Read(Random_NumBytes, out Random)
-                       .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out var legacySessionId)
-                       .Read(CipherSuite_NumBytes, out ushort cipherSuiteNum)
-                       .Read(LegacyCompressionMethod_NumBytes, out ReadOnlySpan<byte> legacyCompressionMethod)
-                       .ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out var extensionBytes);
+        }
+
+        public static ServerHello Parse(ReadOnlySpan<byte> data)
+        {
+            ServerHello ret = new ServerHello();
+
+            data = data.Read(out ret.ProtocolVersion)
+                       .Read(Random_NumBytes, out ret.Random)
+                       .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out ret.LegacySessionId)
+                       .Read(out ret.CipherSuite)
+                       .Read(LegacyCompressionMethod_NumBytes, out ReadOnlySpan<byte> _)
+                       .ReadNextTLSVariableLength(ExtensionsLength_NumBytes, out ReadOnlySpan<byte> extensionBytes);
 
             while (!extensionBytes.IsEmpty)
             {
-                extensionBytes = extensionBytes.Read(out ExtensionType type)
-                                               .ReadNextTLSVariableLength(Extension.Length_NumBytes, out var extBytes);
+                ret.ParseExtension(ref extensionBytes);
+            }
+
+            return ret;
+        }
+
+        private void ParseExtension(ref ReadOnlySpan<byte> data)
+        {
+            data = data.ReadExtension(out var type, out var extBytes);
+
+            switch (type)
+            {
+                case ExtensionType.SupportedVersions:
+                    extBytes.Read(out SupportedVersion);
+                    break;
+                case ExtensionType.KeyShare:
+                    extBytes.Read(out KeyShare);
+                    break;
+                default:
+                    extBytes = extBytes.ReadNextTLSVariableLength(UnknownExtension.ArrayLength_NumBytes, out byte[] bytes);
+
+                    UnknownExtensions.Add(new UnknownExtension()
+                    {
+                        ExtensionType = (ushort)type,
+                        Bytes = bytes,
+                    });
+
+                    break;
             }
         }
+
     }
 }

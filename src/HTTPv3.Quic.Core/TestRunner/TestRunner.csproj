@@ -7,10 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Security.Cryptography.Cng" Version="4.5.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\HTTPv3.Quic.Core\HTTPv3.Quic.Core.csproj" />
   </ItemGroup>
 

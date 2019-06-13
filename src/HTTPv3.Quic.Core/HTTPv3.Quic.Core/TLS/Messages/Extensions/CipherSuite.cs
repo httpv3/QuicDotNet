@@ -31,7 +31,7 @@ namespace HTTPv3.Quic.TLS.Messages.Extensions
 
         public static ReadOnlySpan<byte> Read(this in ReadOnlySpan<byte> bytesIn, in List<CipherSuite> list)
         {
-            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out var arrData);
+            var ret = bytesIn.ReadNextTLSVariableLength(ArrayLength_NumBytes, out ReadOnlySpan<byte> arrData);
 
             while (!arrData.IsEmpty)
             {

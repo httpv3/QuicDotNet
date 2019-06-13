@@ -38,10 +38,10 @@ namespace HTTPv3.Quic.Messages.Client
                         await initial.Process(packet);
                         break;
                     case EncryptionState.Handshake:
-                        await handshake.Process(packet);
+                        //await handshake.Process(packet);
                         break;
                     case EncryptionState.Application:
-                        await application.Process(packet);
+                        //await application.Process(packet);
                         break;
                 }
 
