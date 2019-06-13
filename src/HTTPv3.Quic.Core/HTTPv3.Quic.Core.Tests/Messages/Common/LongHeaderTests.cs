@@ -1,4 +1,5 @@
 ﻿using HTTPv3.Quic.Exceptions.Parsing;
+using HTTPv3.Quic.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 

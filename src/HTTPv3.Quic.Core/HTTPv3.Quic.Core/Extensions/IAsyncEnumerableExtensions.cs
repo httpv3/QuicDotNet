@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Sources;
 
-namespace HTTPv3.Quic
+namespace HTTPv3.Quic.Extensions
 {
     internal static class IAsyncEnumerableExtensions
     {

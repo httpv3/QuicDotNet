@@ -2,7 +2,7 @@
 using HTTPv3.Quic.Messages.Common;
 using System;
 
-namespace HTTPv3.Quic
+namespace HTTPv3.Quic.Extensions
 {
     public static class ReadOnlyMemoryExtensions
     {

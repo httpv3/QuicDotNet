@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography;
 
-namespace HTTPv3.Quic
+namespace HTTPv3.Quic.Extensions
 {
     public static class CngKeyExtensions
     {

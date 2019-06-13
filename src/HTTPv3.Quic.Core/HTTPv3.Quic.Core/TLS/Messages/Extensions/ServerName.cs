@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
-using HTTPv3.Quic;
+using HTTPv3.Quic.Extensions;
 
 namespace HTTPv3.Quic.TLS.Messages.Extensions
 {

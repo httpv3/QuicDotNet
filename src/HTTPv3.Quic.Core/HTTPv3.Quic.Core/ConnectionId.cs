@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HTTPv3.Quic.Extensions;
+using System;
 using System.Data.HashFunction.FNV;
 using System.Linq;
 using System.Security.Cryptography;

@@ -1,8 +1,8 @@
 ﻿using HTTPv3.Quic.Exceptions.Security;
+using HTTPv3.Quic.Extensions;
 using HTTPv3.Quic.Security;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace HTTPv3.Quic.Messages.Common
 {

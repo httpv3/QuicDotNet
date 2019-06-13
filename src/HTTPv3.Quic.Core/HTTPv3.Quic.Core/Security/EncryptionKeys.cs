@@ -1,4 +1,5 @@
-﻿using HTTPv3.Quic.TLS;
+﻿using HTTPv3.Quic.Extensions;
+using HTTPv3.Quic.TLS;
 using HTTPv3.Quic.TLS.Messages.Extensions;
 using System;
 using System.Security.Cryptography;

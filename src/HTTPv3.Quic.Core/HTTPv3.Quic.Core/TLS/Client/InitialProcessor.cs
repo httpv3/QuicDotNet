@@ -1,10 +1,6 @@
-﻿using HTTPv3.Quic.Messages.Common;
-using HTTPv3.Quic.Messages.Frames;
+﻿using HTTPv3.Quic.Extensions;
 using HTTPv3.Quic.TLS.Messages;
-using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace HTTPv3.Quic.TLS.Client
@@ -35,12 +31,12 @@ namespace HTTPv3.Quic.TLS.Client
             switch (r.HandshakeType)
             {
                 case HandshakeType.ServerHello:
-                    Process(h as ServerHello);
+                    await Process(h as ServerHello);
                     break;
             }
         }
 
-        private void Process(ServerHello m)
+        private async Task Process(ServerHello m)
         {
             conn.SelectedCipherSuite = m.CipherSuite;
 
@@ -55,6 +51,8 @@ namespace HTTPv3.Quic.TLS.Client
                     var premasterKey = ecdhe.DeriveKeyMaterial(theirKey);
                 }
             }
+
+            await Task.Yield();
         }
     }
 }

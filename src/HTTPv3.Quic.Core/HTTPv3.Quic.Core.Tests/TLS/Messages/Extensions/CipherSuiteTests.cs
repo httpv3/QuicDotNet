@@ -1,4 +1,5 @@
 ﻿using HTTPv3.Quic.Exceptions.Parsing;
+using HTTPv3.Quic.Extensions;
 using HTTPv3.Quic.Messages.Client;
 using HTTPv3.Quic.Messages.Common;
 using HTTPv3.Quic.TLS.Messages.Extensions;

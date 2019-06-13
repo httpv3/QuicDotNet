@@ -1,4 +1,5 @@
-﻿using HTTPv3.Quic.Messages;
+﻿using HTTPv3.Quic.Extensions;
+using HTTPv3.Quic.Messages;
 using HTTPv3.Quic.Messages.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;

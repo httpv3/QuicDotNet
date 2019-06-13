@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using HTTPv3.Quic.Messages.Frames;
 using System;
 using HTTPv3.Quic.Messages.Common;
+using HTTPv3.Quic.Extensions;
 
 namespace HTTPv3.Quic.Messages.Client
 {

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace HTTPv3.Quic
+namespace HTTPv3.Quic.Extensions
 {
     public static class PipeExtensions
     {

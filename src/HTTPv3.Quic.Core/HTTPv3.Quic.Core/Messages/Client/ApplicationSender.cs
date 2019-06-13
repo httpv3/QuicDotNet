@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using HTTPv3.Quic.Messages.Frames;
 using System;
+using HTTPv3.Quic.Extensions;
 
 namespace HTTPv3.Quic.Messages.Client
 {
@@ -58,7 +59,7 @@ namespace HTTPv3.Quic.Messages.Client
 
         private async Task SendData(Memory<byte> data)
         {
-            
+            await Task.Yield();
         }
     }
 }

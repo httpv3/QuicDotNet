@@ -1,7 +1,6 @@
-﻿using HTTPv3.Quic.TLS.Messages.Extensions;
+﻿using HTTPv3.Quic.Extensions;
+using HTTPv3.Quic.TLS.Messages.Extensions;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace HTTPv3.Quic.TLS.Messages
 {

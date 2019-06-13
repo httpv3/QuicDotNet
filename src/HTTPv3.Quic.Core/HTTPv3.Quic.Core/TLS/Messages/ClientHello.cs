@@ -1,4 +1,5 @@
-﻿using HTTPv3.Quic.Messages.Extensions;
+﻿using HTTPv3.Quic.Extensions;
+using HTTPv3.Quic.Messages.Extensions;
 using HTTPv3.Quic.TLS.Messages.Extensions;
 using System;
 using System.Collections.Generic;
@@ -116,7 +117,7 @@ namespace HTTPv3.Quic.TLS.Messages
                                       .Write(Random)                                                           // random
                                       .WriteTLSVariableLength(LegacySessionIdLength_NumBytes, LegacySessionId) // legacy_session_id
                                       .Write(CipherSuites)                                                     // cipher_suites
-                                      .Write(0x1).Write(0x0)                                                   // legacy_compression_methods
+                                      .Write((byte)0x1).Write((byte)0x0)                                       // legacy_compression_methods
                                       .WriteVector(ExtensionsLength_NumBytes, (buf2, state2) =>
                                       {
                                           buf2 = WriteExtensions(buf2);
