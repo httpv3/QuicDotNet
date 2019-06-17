@@ -103,6 +103,7 @@ namespace HTTPv3.Quic
         private async Task SendToApp(CryptoFrame frame)
         {
             await toApp.Writer.WriteAsync(frame.Data, cancel);
+            await toApp.Writer.FlushAsync();
 
             toAppOffset += (ulong)frame.Data.Length;
         }

@@ -12,8 +12,6 @@ namespace HTTPv3.Quic.TLS.Messages
     // https://tools.ietf.org/html/rfc8446#section-4.1.2
     internal class ClientHello : Handshake
     {
-        public const int Random_NumBytes = 32;
-        public const int LegacySessionId_NumBytes = 32;
         public const int LegacySessionIdLength_NumBytes = 1;
         public const int LegacyCompressionMethods_NumBytes = 2;
         public const int ExtensionsLength_NumBytes = 2;
@@ -42,7 +40,7 @@ namespace HTTPv3.Quic.TLS.Messages
             ClientHello ret = new ClientHello();
 
             data = data.Read(out ret.LegacyVersion)
-                       .Read(Random_NumBytes, out ret.Random)
+                       .Read(ClientConnection.Random_NumBytes, out ret.Random)
                        .ReadNextTLSVariableLength(LegacySessionIdLength_NumBytes, out ret.LegacySessionId)
                        .Read(ret.CipherSuites);
 
@@ -99,17 +97,6 @@ namespace HTTPv3.Quic.TLS.Messages
 
         public Span<byte> Write(in Span<byte> buffer)
         {
-            if (Random == null || Random.Length != Random_NumBytes)
-            {
-                Random = new byte[Random_NumBytes];
-                RandomNumberGenerator.Fill(Random);
-            }
-            if (LegacySessionId == null || LegacySessionId.Length != LegacySessionId_NumBytes)
-            {
-                LegacySessionId = new byte[LegacySessionId_NumBytes];
-                RandomNumberGenerator.Fill(LegacySessionId);
-            }
-
             return buffer.Write((byte)HandshakeType.ClientHello)
                          .WriteVector(Handshake.Length_NumBytes, (buf, state) =>
                          {

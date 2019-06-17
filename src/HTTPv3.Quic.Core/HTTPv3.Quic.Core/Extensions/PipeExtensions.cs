@@ -38,8 +38,6 @@ namespace HTTPv3.Quic.Extensions
 
                 reader.AdvanceTo(next);
 
-                Console.WriteLine(data.Length);
-
                 return data;
             }
         }
@@ -52,7 +50,6 @@ namespace HTTPv3.Quic.Extensions
         public static async Task<byte[]> ReadTLSData(this PipeReader reader, int lengthNumBytes, CancellationToken cancel)
         {
             int length = (int)(await reader.ReadUInt32(lengthNumBytes, cancel));
-            Console.WriteLine(length);
             return await reader.ReadBytes(length, cancel);
         }
     }

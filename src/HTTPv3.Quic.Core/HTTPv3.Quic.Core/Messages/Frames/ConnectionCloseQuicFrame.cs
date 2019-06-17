@@ -12,15 +12,15 @@ namespace HTTPv3.Quic.Messages.Frames
         public FrameType FrameType;
         public string Reason;
 
-        public ConnectionCloseQuicFrame(ref Packet p)
-        {
-            p.PayloadCursor = p.PayloadCursor.Read(ErrorCode_NumBytes, out ushort errorCodeNum)
-                                             .Read(out FrameType)
-                                             .ReadNextVariableInt(out int reasonLength)
-                                             .Read(reasonLength, out byte[] reasonBytes);
+        //public ConnectionCloseQuicFrame(ref Packet p)
+        //{
+        //    p.PayloadCursor = p.PayloadCursor.Read(ErrorCode_NumBytes, out ushort errorCodeNum)
+        //                                     .Read(out FrameType)
+        //                                     .ReadNextVariableInt(out int reasonLength)
+        //                                     .Read(reasonLength, out byte[] reasonBytes);
 
-            ErrorCode = ConnectionCloseAppFrame.ParseErrorCode(errorCodeNum);
-            Reason = Encoding.UTF8.GetString(reasonBytes);
-        }
+        //    ErrorCode = ConnectionCloseAppFrame.ParseErrorCode(errorCodeNum);
+        //    Reason = Encoding.UTF8.GetString(reasonBytes);
+        //}
     }
 }

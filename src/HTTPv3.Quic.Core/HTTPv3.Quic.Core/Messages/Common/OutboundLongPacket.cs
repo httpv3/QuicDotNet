@@ -7,7 +7,7 @@ namespace HTTPv3.Quic.Messages.Common
 {
     abstract class OutboundLongPacket : OutboundPacket
     {
-        public const uint CURRENT_VERSION = (uint)VersionTypes.Draft_20;
+        public const VersionType CURRENT_VERSION = VersionType.Draft_20;
 
         public OutboundLongPacket(Connection conn, uint packetNumber) : base(conn, packetNumber) { }
 

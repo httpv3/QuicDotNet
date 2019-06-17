@@ -3,6 +3,7 @@ using HTTPv3.Quic.Extensions;
 using HTTPv3.Quic.Security;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace HTTPv3.Quic.Messages.Common
 {
@@ -54,6 +55,8 @@ namespace HTTPv3.Quic.Messages.Common
                 InboundPacket d = null;
                 try
                 {
+                    if (p is InboundEncryptedHandshakePacket)
+                        await Task.Delay(5000);
                     d = p.AsDecryptedPacket(keyMan);
                 }
                 catch

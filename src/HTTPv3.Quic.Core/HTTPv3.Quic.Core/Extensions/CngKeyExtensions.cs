@@ -8,7 +8,7 @@ namespace HTTPv3.Quic.Extensions
         public static readonly byte[] BCRYPT_ECDH_PUBLIC_P256_MAGIC = "45.43.4B.31 20.00.00.00".ToByteArrayFromHex();
         public static readonly byte[] BCRYPT_ECDH_PUBLIC_P384_MAGIC = "45.43.4B.33 30.00.00.00".ToByteArrayFromHex();
 
-        public static CngKey FromTLSPublicKey(CngAlgorithm alg, byte[] tlsKey)
+        public static ECDiffieHellmanCngPublicKey FromTLSPublicKey(CngAlgorithm alg, byte[] tlsKey)
         {
             if (alg == CngAlgorithm.ECDiffieHellmanP256)
             {
@@ -20,7 +20,7 @@ namespace HTTPv3.Quic.Extensions
                 Buffer.BlockCopy(BCRYPT_ECDH_PUBLIC_P256_MAGIC, 0, buffer, 0, 8);
                 Buffer.BlockCopy(tlsKey, 1, buffer, 8, 64);
 
-                return CngKey.Import(buffer, CngKeyBlobFormat.EccPublicBlob);
+                return (ECDiffieHellmanCngPublicKey)ECDiffieHellmanCngPublicKey.FromByteArray(buffer, CngKeyBlobFormat.EccPublicBlob);
             }
 
             if (alg == CngAlgorithm.ECDiffieHellmanP384)
@@ -33,7 +33,7 @@ namespace HTTPv3.Quic.Extensions
                 Buffer.BlockCopy(BCRYPT_ECDH_PUBLIC_P384_MAGIC, 0, buffer, 0, 8);
                 Buffer.BlockCopy(tlsKey, 1, buffer, 8, 96);
 
-                return CngKey.Import(buffer, CngKeyBlobFormat.EccPublicBlob);
+                return (ECDiffieHellmanCngPublicKey)ECDiffieHellmanCngPublicKey.FromByteArray(buffer, CngKeyBlobFormat.EccPublicBlob);
             }
 
             throw new NotImplementedException();

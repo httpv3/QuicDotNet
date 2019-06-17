@@ -12,15 +12,15 @@ namespace HTTPv3.Quic.Messages.Frames
         public TransportErrorCodes ErrorCode;
         public string Reason;
 
-        public ConnectionCloseAppFrame(ref Packet p)
-        {
-            p.PayloadCursor = p.PayloadCursor.Read(ErrorCode_NumBytes, out ushort errorCodeNum)
-                                             .ReadNextVariableInt(out int reasonLength)
-                                             .Read(reasonLength, out byte[] reasonBytes);
+        //public ConnectionCloseAppFrame(ref Packet p)
+        //{
+        //    p.PayloadCursor = p.PayloadCursor.Read(ErrorCode_NumBytes, out ushort errorCodeNum)
+        //                                     .ReadNextVariableInt(out int reasonLength)
+        //                                     .Read(reasonLength, out byte[] reasonBytes);
 
-            ErrorCode = ParseErrorCode(errorCodeNum);
-            Reason = Encoding.UTF8.GetString(reasonBytes);
-        }
+        //    ErrorCode = ParseErrorCode(errorCodeNum);
+        //    Reason = Encoding.UTF8.GetString(reasonBytes);
+        //}
 
         public static TransportErrorCodes ParseErrorCode(ushort errorCodeNum)
         {

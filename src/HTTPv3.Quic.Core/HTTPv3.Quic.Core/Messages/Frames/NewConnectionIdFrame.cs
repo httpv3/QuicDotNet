@@ -11,14 +11,14 @@ namespace HTTPv3.Quic.Messages.Frames
         public ulong Sequence;
         public byte[] ResetToken;
 
-        public NewConnectionIdFrame(ref Packet p)
-        {
-            p.PayloadCursor = p.PayloadCursor.ReadNextVariableInt(out Sequence)
-                                             .Read(out byte length)
-                                             .Read(length, out byte[] idBytes)
-                                             .Read(ResetToken_NumBytes, out ResetToken);
+        //public NewConnectionIdFrame(ref Packet p)
+        //{
+        //    p.PayloadCursor = p.PayloadCursor.ReadNextVariableInt(out Sequence)
+        //                                     .Read(out byte length)
+        //                                     .Read(length, out byte[] idBytes)
+        //                                     .Read(ResetToken_NumBytes, out ResetToken);
 
-            Id = new ConnectionId(idBytes);
-        }
+        //    Id = new ConnectionId(idBytes);
+        //}
     }
 }

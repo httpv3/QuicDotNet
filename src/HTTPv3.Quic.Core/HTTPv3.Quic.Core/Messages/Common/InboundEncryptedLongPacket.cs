@@ -6,12 +6,12 @@ namespace HTTPv3.Quic.Messages.Common
 {
     internal abstract class InboundEncryptedLongPacket : InboundEncryptedPacket
     {
-        public ReadOnlyMemory<byte> Version;
+        public VersionType Version;
         public ReadOnlyMemory<byte> SrcId;
 
         internal static ReadOnlyMemory<byte> Parse(in ReadOnlyMemory<byte> start, in ReadOnlyMemory<byte> current, byte firstByte, out InboundEncryptedPacket packetOut)
         {
-            var cur = current.Read(Header.Version_Length, out ReadOnlyMemory<byte> version)
+            var cur = current.Read(out VersionType version)
                              .Read(out byte DCIL_SCIL);
 
             int DCIL = ConnectionId.ParseLengthByte((byte)((DCIL_SCIL & Header.DCIL_Mask) >> Header.DCIL_Shift));

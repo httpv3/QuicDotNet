@@ -32,9 +32,9 @@ namespace HTTPv3.Quic.Messages.Extensions
             PreferredAddress = PreferredAddress.Default,
         };
 
-        public VersionTypes InitialVersion;
-        public VersionTypes NegotiatedVersion;
-        public List<VersionTypes> SupportedVersions = new List<VersionTypes>();
+        public VersionType InitialVersion;
+        public VersionType NegotiatedVersion;
+        public List<VersionType> SupportedVersions = new List<VersionType>();
 
         public ConnectionId OriginalConnectionId;
 

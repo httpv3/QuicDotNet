@@ -27,7 +27,7 @@ namespace HTTPv3.Quic.Messages.Common
 
             if (Token == null)
             {
-                cur = cur.Write(0x0);
+                cur = cur.WriteVarLengthInt(0);
             }
             else
             {

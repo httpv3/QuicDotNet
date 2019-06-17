@@ -36,11 +36,6 @@ namespace HTTPv3.Quic.Messages.Common
 
         public const int StartOfConnIDs_Offset = 6;
 
-        public static bool IsLongHeader(ref Packet packet)
-        {
-            return (packet.Bytes[HeaderForm_Offset] & HeaderForm_Mask) > 0;
-        }
-
         public static bool IsLongHeader(in byte firstHeaderBit)
         {
             return (firstHeaderBit & HeaderForm_Mask) > 0;

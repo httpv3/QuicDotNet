@@ -62,7 +62,7 @@ namespace HTTPv3.Quic.TLS.Messages
                     extBytes.Read(out KeyShare);
                     break;
                 default:
-                    extBytes = extBytes.ReadNextTLSVariableLength(UnknownExtension.ArrayLength_NumBytes, out byte[] bytes);
+                    extBytes.ReadNextTLSVariableLength(UnknownExtension.ArrayLength_NumBytes, out byte[] bytes);
 
                     UnknownExtensions.Add(new UnknownExtension()
                     {

@@ -60,7 +60,7 @@ namespace HTTPv3.Quic
 
             KeyManager = new KeyManager(clientChosenDestinationId, isServer);
 
-            TLSConn = new TLS.ClientConnection(InitialStream, HandshakeStream, ApplicationStream, cancel);
+            TLSConn = new TLS.ClientConnection(InitialStream, HandshakeStream, ApplicationStream, OnCipherUpdated, cancel);
 
             receiverTask = StartReceiving();
             senderTask = StartSending();
@@ -105,6 +105,11 @@ namespace HTTPv3.Quic
             initialSender = new InitialSender(udpClient, this);
 
             return Task.WhenAll(initialSender.Run());
+        }
+
+        private void OnCipherUpdated(CipherUpdateDetail detail)
+        {
+            KeyManager.Add(detail);
         }
     }
 }
