@@ -1,5 +1,12 @@
 ﻿using AronParker.Hkdf;
 using HTTPv3.Quic.Extensions;
+using Org.BouncyCastle.Asn1.Sec;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Agreement;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Security;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -54,6 +61,42 @@ namespace HTTPv3.Quic.TLS
 
             //Console.WriteLine($"info: {BitConverter.ToString(info).Replace("-", "")}");
             return hkdf.Expand(secret, length, info);
+        }
+
+
+        static public byte[] CalculateSharedKey(ECPrivateKeyParameters myKey, ECPublicKeyParameters sharedKey)
+        {
+            ECDHCBasicAgreement agreement = new ECDHCBasicAgreement();
+            agreement.Init(myKey);
+            return agreement.CalculateAgreement(sharedKey).ToByteArray();
+        }
+
+        static public AsymmetricCipherKeyPair GenerateKeyPair()
+        {
+            var random = new SecureRandom();
+            var curve = SecNamedCurves.GetByName("secp256r1");
+            var parameters = new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
+
+            ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(parameters, random);
+
+            ECKeyPairGenerator keygenerator = new ECKeyPairGenerator();
+            keygenerator.Init(keyGenerationParameters);
+
+            return keygenerator.GenerateKeyPair();
+        }
+
+        static public byte[] EncodePublicKey(ECPublicKeyParameters publicKey)
+        {
+            return publicKey.Q.GetEncoded();
+        }
+
+        static public ECPublicKeyParameters PublicKeyFromBytes(Span<byte> publicKey)
+        {
+            var curve = SecNamedCurves.GetByName("secp256r1");
+            var parameters = new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
+
+            var p = curve.Curve.CreatePoint(new BigInteger(publicKey.Slice(1, 32).ToArray()), new BigInteger(publicKey.Slice(33, 32).ToArray()));
+            return new ECPublicKeyParameters(p, parameters);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using HTTPv3.Quic.Extensions;
 using HTTPv3.Quic.Security;
 using HTTPv3.Quic.TLS.Messages;
+using Org.BouncyCastle.Crypto.Agreement;
 using System;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -49,34 +50,33 @@ namespace HTTPv3.Quic.TLS.Client
 
             if (m.KeyShare.Group == Messages.Extensions.NamedGroup.secp256r1)
             {
-                using(var theirKey = CngKeyExtensions.FromTLSPublicKey(CngAlgorithm.ECDiffieHellmanP256, m.KeyShare.KeyExchange))
-                using (var ecdhe = new ECDiffieHellmanCng(conn.MyKey))
+                var sharedPub = CryptoHelper.PublicKeyFromBytes(m.KeyShare.KeyExchange);
+                var shared_secret = CryptoHelper.CalculateSharedKey(conn.MyKey, sharedPub);
+
+                //var shared_secret = new byte[0]; //CryptoHelper.ComputeSha256Hash(ecdhe.DeriveKeyMaterial(theirKey));
+                var hello_hash = conn.GetHashOfProcessedMessage();
+                var zero_key = "0000000000000000000000000000000000000000000000000000000000000000".ToByteArrayFromHex();
+
+                AronParker.Hkdf.Hkdf hkdf = new AronParker.Hkdf.Hkdf(HashAlgorithmName.SHA256);
+
+                var early_secret = hkdf.Extract(zero_key, new byte[] { 0 });
+                var empty_hash = CryptoHelper.ComputeSha256Hash(new byte[] { });
+                var derived_secret = CryptoHelper.ExpandTLSLabel(hkdf, early_secret, CryptoHelper.DERIVED_LABEL, empty_hash, 32);
+                var handshake_secret = hkdf.Extract(shared_secret, derived_secret);
+                var client_handshake_traffic_secret = CryptoHelper.ExpandTLSLabel(hkdf, handshake_secret, CryptoHelper.CLIENT_HANDSHAKE_LABEL, hello_hash, 32);
+                var server_handshake_traffic_secret = CryptoHelper.ExpandTLSLabel(hkdf, handshake_secret, CryptoHelper.SERVER_HANDSHAKE_LABEL, hello_hash, 32);
+
+                //var masterKey = ecdhe.DeriveKeyTls(theirKey, MASTER_SECRET_LABEL, seed);
+                //master_secret = PRF(premasterKey, "master secret", ClientHello.random + ServerHello.random)
+                //var keyData = EncryptionKeys.Hkdf256.Expand(premasterKey, 96, seed);
+
+                conn.CipherUpdated(new CipherUpdateDetail()
                 {
-                    var shared_secret = CryptoHelper.ComputeSha256Hash(ecdhe.DeriveKeyMaterial(theirKey));
-                    var hello_hash = conn.GetHashOfProcessedMessage();
-                    var zero_key = "0000000000000000000000000000000000000000000000000000000000000000".ToByteArrayFromHex();
-
-                    AronParker.Hkdf.Hkdf hkdf = new AronParker.Hkdf.Hkdf(HashAlgorithmName.SHA256);
-
-                    var early_secret = hkdf.Extract(zero_key, new byte[] { 0 });
-                    var empty_hash = CryptoHelper.ComputeSha256Hash(new byte[] { });
-                    var derived_secret = CryptoHelper.ExpandTLSLabel(hkdf, early_secret, CryptoHelper.DERIVED_LABEL, empty_hash, 32);
-                    var handshake_secret = hkdf.Extract(shared_secret, derived_secret);
-                    var client_handshake_traffic_secret = CryptoHelper.ExpandTLSLabel(hkdf, handshake_secret, CryptoHelper.CLIENT_HANDSHAKE_LABEL, hello_hash, 32);
-                    var server_handshake_traffic_secret = CryptoHelper.ExpandTLSLabel(hkdf, handshake_secret, CryptoHelper.SERVER_HANDSHAKE_LABEL, hello_hash, 32);
-
-                    //var masterKey = ecdhe.DeriveKeyTls(theirKey, MASTER_SECRET_LABEL, seed);
-                    //master_secret = PRF(premasterKey, "master secret", ClientHello.random + ServerHello.random)
-                    //var keyData = EncryptionKeys.Hkdf256.Expand(premasterKey, 96, seed);
-
-                    conn.CipherUpdated(new CipherUpdateDetail()
-                    {
-                        State = EncryptionState.Handshake,
-                        ClientSecret = client_handshake_traffic_secret,
-                        ServerSecret = server_handshake_traffic_secret,
-                        CipherSuite = conn.SelectedCipherSuite,
-                    });
-                }
+                    State = EncryptionState.Handshake,
+                    ClientSecret = client_handshake_traffic_secret,
+                    ServerSecret = server_handshake_traffic_secret,
+                    CipherSuite = conn.SelectedCipherSuite,
+                });
             }
 
             await Task.Yield();
