@@ -1,0 +1,118 @@
+﻿using HTTPv3.Quic;
+using HTTPv3.Quic.Extensions;
+using System;
+using System.Collections.Generic;
+using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
+
+namespace TestRunner
+{
+    class Program
+    {
+        static AwaitableQueue<char> q = new AwaitableQueue<char>();
+
+        static async Task Main(string[] args)
+        {
+            var pub =  CngKey.Import("45.43.4B.31 20.00.00.00.FD96D5F2D95F4ABD93070F6147EFC0FC48B1FFA3438B683505C008DC1BEFBAC2.009F3D19F1AD490AA4AA871872DACB0C3555762EEBF0B59AF340159B7BFD378E".ToByteArrayFromHex(), CngKeyBlobFormat.EccPublicBlob);
+            var priv = CngKey.Import("‭45434B32300000006B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C2964FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F562C64E262C37095E386DBEA1A7719C84E61814D80C1E26302E67E0A5B5D4200A".ToByteArrayFromHex(), CngKeyBlobFormat.EccPrivateBlob);
+
+
+            AronParker.Hkdf.Hkdf hkdf = new AronParker.Hkdf.Hkdf(HashAlgorithmName.SHA256);
+
+            var client_hello = "01.00.01.14.03.03.5C.92.CB.4B.C0.9C.8E.1F.8E.B3.CB.80.B0.4A.73.A6.FE.14.6B.3E.EE.F2.41.B0.AF.C5.DE.E2.86.3B.41.84.00.00.02.13.01.01.00.00.E9.00.00.00.21.00.1F.00.00.1C.68.74.74.70.33.2D.74.65.73.74.2E.6C.69.74.65.73.70.65.65.64.74.65.63.68.2E.63.6F.6D.00.2B.00.03.02.03.04.00.0A.00.04.00.02.00.17.00.0D.00.14.00.12.04.03.08.04.04.01.05.03.08.05.05.01.08.06.06.01.02.01.00.33.00.47.00.45.00.17.00.41.04.FC.E1.4F.C8.51.DE.63.22.B3.31.23.F3.10.8A.91.4F.69.70.EC.CC.F1.8B.67.74.78.A7.D5.F0.CC.40.59.BD.8F.17.FC.43.85.08.90.22.2B.20.79.C9.12.77.DF.CE.0A.C2.D0.5B.48.35.36.63.1E.D7.07.C9.39.50.9A.62.00.2D.00.02.01.01.FF.A5.00.34.00.32.00.01.00.04.80.00.EA.60.00.04.00.04.80.26.25.A0.00.05.00.04.80.03.D0.90.00.06.00.04.80.03.D0.90.00.07.00.04.80.03.D0.90.00.08.00.01.01.00.09.00.01.01.00.0B.00.04.03.00.01.02.00.10.00.08.00.06.05.68.71.2D.32.30".ToByteArrayFromHex();
+            var server_hello = "02.00.00.77.03.03.52.28.F9.DD.FE.81.09.79.11.2B.A7.07.0D.B5.42.B0.C7.37.8E.2E.A7.87.30.F2.B3.A9.A9.5D.AC.63.03.E8.00.13.01.00.00.4F.00.33.00.45.00.17.00.41.04.FD.96.D5.F2.D9.5F.4A.BD.93.07.0F.61.47.EF.C0.FC.48.B1.FF.A3.43.8B.68.35.05.C0.08.DC.1B.EF.BA.C2.00.9F.3D.19.F1.AD.49.0A.A4.AA.87.18.72.DA.CB.0C.35.55.76.2E.EB.F0.B5.9A.F3.40.15.9B.7B.FD.37.8E.00.2B.00.02.03.04".ToByteArrayFromHex();
+            var all_stream = new byte[client_hello.Length + server_hello.Length];
+            all_stream.AsSpan().Write(client_hello).Write(server_hello);
+
+            var shared_secret = "D7.6D.8F.F1.FC.6B.8E.F2.29.7C.A6.96.6D.B2.38.ED.F5.DE.75.8F.C6.81.1F.11.ED.A1.9F.B1.CD.B0.33.EB".ToByteArrayFromHex();
+            var hello_hash = ComputeSha256Hash(all_stream);  // "da75ce1139ac80dae4044da932350cf65c97ccc9e33f1e6f7d2d4b18b736ffd5".ToByteArrayFromHex();
+            var zero_key = "0000000000000000000000000000000000000000000000000000000000000000".ToByteArrayFromHex();
+
+            var early_secret = hkdf.Extract(zero_key, new byte[] { 0 });
+            Console.WriteLine($"early_secret: {BitConverter.ToString(early_secret).Replace("-", "")}");
+
+            var empty_hash = ComputeSha256Hash(new byte[] { });
+            Console.WriteLine($"empty_hash: {BitConverter.ToString(empty_hash).Replace("-", "")}");
+
+            var derived_secret = ExpandTLSLabel(hkdf, early_secret, DERIVED_LABEL, empty_hash, 32);
+            Console.WriteLine($"derived_secret: {BitConverter.ToString(derived_secret).Replace("-", "")}");
+
+            var handshake_secret = hkdf.Extract(shared_secret, derived_secret);
+            Console.WriteLine($"handshake_secret: {BitConverter.ToString(handshake_secret).Replace("-", "")}");
+
+            //var client_handshake_traffic_secret = ExpandTLSLabel(hkdf, handshake_secret, CLIENT_HANDSHAKE_LABEL, hello_hash, 32);
+            //Console.WriteLine($"csecret: {BitConverter.ToString(client_handshake_traffic_secret).Replace("-", "")}");
+
+            //var server_handshake_traffic_secret = ExpandTLSLabel(hkdf, handshake_secret, SERVER_HANDSHAKE_LABEL, hello_hash, 32);
+            //Console.WriteLine($"csecret: {BitConverter.ToString(server_handshake_traffic_secret).Replace("-", "")}");
+
+            //var client_handshake_key = ExpandTLSLabel(hkdf, client_handshake_traffic_secret, KEY_LABEL, new byte[] { }, 16);
+            //Console.WriteLine($"ckey: {BitConverter.ToString(client_handshake_key).Replace("-", "")}");
+
+            //var server_handshake_key = ExpandTLSLabel(hkdf, server_handshake_traffic_secret, KEY_LABEL, new byte[] { }, 16);
+            //Console.WriteLine($"skey: {BitConverter.ToString(server_handshake_key).Replace("-", "")}");
+
+            //var client_handshake_iv = ExpandTLSLabel(hkdf, client_handshake_traffic_secret, IV_LABEL, new byte[] { }, 12);
+            //Console.WriteLine($"civ: {BitConverter.ToString(client_handshake_iv).Replace("-", "")}");
+
+            //var server_handshake_iv = ExpandTLSLabel(hkdf, server_handshake_traffic_secret, IV_LABEL, new byte[] { }, 12);
+            //Console.WriteLine($"siv: {BitConverter.ToString(server_handshake_iv).Replace("-", "")}");
+
+            //await Run();
+
+
+        }
+
+        static public readonly byte[] TLS_LABEL = "74 6C 73 31 33 20".ToByteArrayFromHex();
+        static public readonly byte[] DERIVED_LABEL = "64 65 72 69 76 65 64".ToByteArrayFromHex();
+        static public readonly byte[] CLIENT_HANDSHAKE_LABEL = "63 20 68 73 20 74 72 61 66 66 69 63".ToByteArrayFromHex();
+        static public readonly byte[] SERVER_HANDSHAKE_LABEL = "73 20 68 73 20 74 72 61 66 66 69 63".ToByteArrayFromHex();
+        static public readonly byte[] KEY_LABEL = "6B 65 79".ToByteArrayFromHex();
+        static public readonly byte[] IV_LABEL = "69 76".ToByteArrayFromHex();
+
+        static private byte[] ExpandTLSLabel(AronParker.Hkdf.Hkdf hkdf, byte[] secret, ReadOnlySpan<byte> label, ReadOnlySpan<byte> context, ushort length)
+        {
+            var info = new byte[4 + TLS_LABEL.Length + label.Length + context.Length];
+            info.AsSpan().Write(length)
+                         .Write((byte)(TLS_LABEL.Length + label.Length))
+                         .Write(TLS_LABEL)
+                         .Write(label)
+                         .Write((byte)(context.Length))
+                         .Write(context);
+
+            //Console.WriteLine($"info: {BitConverter.ToString(info).Replace("-", "")}");
+            return hkdf.Expand(secret, length, info);
+        }
+
+
+        static byte[] ComputeSha256Hash(byte[] bytesIn)
+        {
+            // Create a SHA256   
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                // ComputeHash - returns byte array  
+                return sha256Hash.ComputeHash(bytesIn);
+
+            }
+        }
+
+        private static async Task EchoTest()
+        {
+            await foreach (var c in q)
+            {
+                Console.Write(c);
+            }
+        }
+
+        async static Task Run()
+        {
+            QuicClient client = new QuicClient("http3-test.litespeedtech.com", 4433);
+            await client.Connect();
+
+            await Task.Delay(100000000);
+
+            //var res = await client.Request("index.html");
+        }
+    }
+}

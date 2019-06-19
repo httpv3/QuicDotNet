@@ -2,6 +2,11 @@
 using HTTPv3.Quic.TLS.Client;
 using HTTPv3.Quic.TLS.Messages;
 using HTTPv3.Quic.TLS.Messages.Extensions;
+using Org.BouncyCastle.Asn1.X9;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Security;
 using System;
 using System.Security.Cryptography;
 using System.Threading;
@@ -68,7 +73,7 @@ namespace HTTPv3.Quic.TLS
             MyKeyShare = CreateKeyShare();
             hello.KeyShares.Add(MyKeyShare);
 
-            var ret =  hello.Write(buffer);
+            var ret = hello.Write(buffer);
 
             AddProcessedMessage(buffer.Subtract(ret));
 
@@ -77,6 +82,20 @@ namespace HTTPv3.Quic.TLS
 
         private KeyShare CreateKeyShare()
         {
+            var random = new SecureRandom();
+            var curve = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName("secp256r1");
+            var parameters = new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
+
+            ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(parameters, random);
+
+            ECKeyPairGenerator keygenerator = new ECKeyPairGenerator();
+            keygenerator.Init(keyGenerationParameters);
+            AsymmetricCipherKeyPair pair = keygenerator.GenerateKeyPair();
+
+            ECPrivateKeyParameters priv = (ECPrivateKeyParameters)pair.Private;
+            ECPublicKeyParameters pub = (ECPublicKeyParameters)pair.Public;
+
+
             MyKey = CngKey.Create(CngAlgorithm.ECDiffieHellmanP256);
             var tlsKey = MyKey.ToTLSPublicKey();
 
@@ -96,10 +115,7 @@ namespace HTTPv3.Quic.TLS
 
         public byte[] GetHashOfProcessedMessage()
         {
-            using (SHA256 hash = SHA256.Create())
-            {
-                return hash.ComputeHash(Messages);
-            }
+            return CryptoHelper.ComputeSha256Hash(Messages);
         }
     }
 }

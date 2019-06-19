@@ -5,6 +5,7 @@ namespace HTTPv3.Quic.Extensions
 {
     public static class CngKeyExtensions
     {
+        public static readonly byte[] BCRYPT_ECDH_PRIVATE_P256_MAGIC = "45.43.4B.32 30.00.00.00".ToByteArrayFromHex();
         public static readonly byte[] BCRYPT_ECDH_PUBLIC_P256_MAGIC = "45.43.4B.31 20.00.00.00".ToByteArrayFromHex();
         public static readonly byte[] BCRYPT_ECDH_PUBLIC_P384_MAGIC = "45.43.4B.33 30.00.00.00".ToByteArrayFromHex();
 
@@ -16,9 +17,7 @@ namespace HTTPv3.Quic.Extensions
                     throw new ArgumentOutOfRangeException(nameof(tlsKey), $"Expecting 65 bytes, received {tlsKey.Length} bytes.");
 
                 var buffer = new byte[72];
-
-                Buffer.BlockCopy(BCRYPT_ECDH_PUBLIC_P256_MAGIC, 0, buffer, 0, 8);
-                Buffer.BlockCopy(tlsKey, 1, buffer, 8, 64);
+                buffer.AsSpan().Write(BCRYPT_ECDH_PUBLIC_P256_MAGIC).Write(tlsKey.AsSpan().Slice(1));
 
                 return (ECDiffieHellmanCngPublicKey)ECDiffieHellmanCngPublicKey.FromByteArray(buffer, CngKeyBlobFormat.EccPublicBlob);
             }
@@ -29,9 +28,7 @@ namespace HTTPv3.Quic.Extensions
                     throw new ArgumentOutOfRangeException(nameof(tlsKey), $"Expecting 97 bytes, received {tlsKey.Length} bytes.");
 
                 var buffer = new byte[104];
-
-                Buffer.BlockCopy(BCRYPT_ECDH_PUBLIC_P384_MAGIC, 0, buffer, 0, 8);
-                Buffer.BlockCopy(tlsKey, 1, buffer, 8, 96);
+                buffer.AsSpan().Write(BCRYPT_ECDH_PUBLIC_P384_MAGIC).Write(tlsKey.AsSpan().Slice(1));
 
                 return (ECDiffieHellmanCngPublicKey)ECDiffieHellmanCngPublicKey.FromByteArray(buffer, CngKeyBlobFormat.EccPublicBlob);
             }
