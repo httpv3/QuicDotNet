@@ -39,6 +39,9 @@ namespace HTTPv3.Quic.Messages.Common
                     {
                         case FrameType.Padding:
                             continue;
+                        case FrameType.Ack:
+                            cur = AckFrame.Parse(cur, out f);
+                            break;
                         case FrameType.Crypto:
                             cur = CryptoFrame.Parse(cur, out f);
                             break;
@@ -64,6 +67,8 @@ namespace HTTPv3.Quic.Messages.Common
         {
             await foreach (var p in packets)
             {
+                bool needsTobBeAcked = false;
+
                 foreach (var f in p.AsFrames())
                     yield return f;
             }
