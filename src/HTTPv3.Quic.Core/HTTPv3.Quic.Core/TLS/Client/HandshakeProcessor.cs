@@ -78,7 +78,7 @@ namespace HTTPv3.Quic.TLS.Client
             var buffer = stream.Output.GetMemory(bufferSize);
             var bytesLeft = finished.Write(buffer.Span).Length;
 
-            stream.Output.Advance(bufferSize - bytesLeft);
+            stream.Output.Advance(buffer.Length - bytesLeft);
             await stream.Output.FlushAsync(conn.cancel);
         }
     }

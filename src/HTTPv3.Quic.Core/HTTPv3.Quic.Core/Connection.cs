@@ -46,6 +46,7 @@ namespace HTTPv3.Quic
 
         private Receiver receiver;
         private InitialSender initialSender;
+        private HandshakeSender handshakeSender;
 
         private Task receiverTask;
         private Task senderTask;
@@ -109,8 +110,9 @@ namespace HTTPv3.Quic
         private Task StartSending()
         {
             initialSender = new InitialSender(udpClient, this);
+            handshakeSender = new HandshakeSender(udpClient, this);
 
-            return Task.WhenAll(initialSender.Run());
+            return Task.WhenAll(initialSender.Run(), handshakeSender.Run());
         }
 
         private void OnCipherUpdated(CipherUpdateDetail detail)
