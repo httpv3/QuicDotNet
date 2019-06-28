@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HTTPv3.Quic
 {
-    public class CryptoStream : IFrameStreamer
+    internal class CryptoStream : IFrameStreamer
     {
         private readonly CancellationToken cancel;
         private readonly Pipe fromApp = new Pipe();
@@ -49,7 +49,7 @@ namespace HTTPv3.Quic
                 await DrainQueue();
         }
 
-        public async Task<CryptoFrame> GetFrame(int numDesiredBytes)
+        public async Task<IFrame> GetFrame(int numDesiredBytes)
         {
             var res = await fromApp.Reader.ReadAsync(cancel);
             AvailableInfo.Reset();

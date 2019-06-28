@@ -54,12 +54,6 @@ namespace HTTPv3.Quic.Messages.Frames
             return cur;
         }
 
-        public Memory<byte> Write(Memory<byte> buffer, bool isLastInPacket)
-        {
-            var ret = Write(buffer, isLastInPacket);
-            return buffer.Slice(buffer.Length - ret.Length);
-        }
-
         public Span<byte> Write(Span<byte> buffer, bool isLastInPacket)
         {
             return buffer.Write(FrameType.Crypto)

@@ -1,6 +1,6 @@
 ﻿namespace HTTPv3.Quic.Messages.Frames
 {
-    public class AvailableFrameInfo
+    internal class AvailableFrameInfo
     {
         public IFrameStreamer Streamer { get; private set; }
         public bool Empty => MaxSize == 0;

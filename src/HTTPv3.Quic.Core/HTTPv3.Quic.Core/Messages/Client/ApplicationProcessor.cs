@@ -26,7 +26,7 @@ namespace HTTPv3.Quic.Messages.Client
         {
             if (frame is CryptoFrame)
             {
-                await conn.ApplicationStream.AddFrame(frame as CryptoFrame);
+                await conn.ApplicationCryptoStream.AddFrame(frame as CryptoFrame);
                 return;
             }
         }

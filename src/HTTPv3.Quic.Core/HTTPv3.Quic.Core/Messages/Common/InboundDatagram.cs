@@ -16,9 +16,19 @@ namespace HTTPv3.Quic.Messages.Common
         public IEnumerable<InboundEncryptedPacket> AsPackets()
         {
             var cur = Data;
-            while(cur.Length > 0)
+            while (cur.Length > 0)
             {
-                cur = InboundEncryptedPacket.Parse(cur, out var p);
+                InboundEncryptedPacket p;
+
+                try
+                {
+                    cur = InboundEncryptedPacket.Parse(cur, out p);
+                }
+                catch
+                {
+                    yield break;
+                }
+
                 p.InboundDatagram = this;
                 yield return p;
             }
@@ -29,7 +39,7 @@ namespace HTTPv3.Quic.Messages.Common
     {
         public static async IAsyncEnumerable<InboundEncryptedPacket> AsPackets(this IAsyncEnumerable<InboundDatagram> datagrams)
         {
-            await foreach(var d in datagrams)
+            await foreach (var d in datagrams)
             {
                 foreach (var p in d.AsPackets())
                     yield return p;

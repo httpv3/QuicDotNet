@@ -30,7 +30,7 @@ namespace HTTPv3.Quic.TLS.Messages
                 case HandshakeType.CertificateVerify:
                     return new CertificateVerify(r.Data);
                 case HandshakeType.Finished:
-                    return new FinishedExtension(r.Data);
+                    return FinishedExtension.Parse(r.Data);
                 default:
                     return null;
             }

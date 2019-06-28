@@ -37,7 +37,7 @@ namespace HTTPv3.Quic.Messages.Client
                         await initial.Process(packet);
                         break;
                     case EncryptionState.Handshake:
-                        //await handshake.Process(packet);
+                        await handshake.Process(packet);
                         break;
                     case EncryptionState.Application:
                         //await application.Process(packet);
@@ -54,9 +54,19 @@ namespace HTTPv3.Quic.Messages.Client
         {
             while (!conn.Cancel.IsCancellationRequested)
             {
-                var res = await udpClient.ReceiveAsync(conn.Cancel);
+                UdpReceiveResult res;
 
-                yield return new InboundDatagram(res.Buffer);
+                try
+                {
+                    res = await udpClient.ReceiveAsync(conn.Cancel);
+                }
+                catch
+                {
+                    yield break;
+                }
+
+                if (res.Buffer != null )
+                    yield return new InboundDatagram(res.Buffer);
             }
         }
 

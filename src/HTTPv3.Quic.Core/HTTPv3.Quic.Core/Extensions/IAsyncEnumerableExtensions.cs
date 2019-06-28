@@ -68,6 +68,7 @@ namespace HTTPv3.Quic.Extensions
                 var t = await Task.WhenAny(tasks.Select(p => p.task));
 
                 var next = tasks.First(p => p.task == t);
+                tasks.Remove(next);
 
                 current = next.stream.Current;
 

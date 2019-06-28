@@ -6,36 +6,41 @@ using System.Text;
 using System.Threading.Tasks;
 using HTTPv3.Quic.Messages.Frames;
 using System;
+using HTTPv3.Quic.Messages.Common;
 using HTTPv3.Quic.Extensions;
 
 namespace HTTPv3.Quic.Messages.Client
 {
-    internal class ApplicationSender
+    internal class HandshakeSender
     {
+        public const int BUFFER_SIZE = 1500;
         public const ushort MAX_DATA = 1200;
 
         UdpClient udpClient;
         Connection conn;
+        uint packetNumber = 0;
 
-        CryptoStream[] cryptoStreams;
+        IFrameStreamer[] streams;
         AvailableFrameInfo[] availableInfo;
+        byte[] packetBuffer = new byte[BUFFER_SIZE];
 
-        public ApplicationSender(UdpClient udpClient, Connection conn)
+        public HandshakeSender(UdpClient udpClient, Connection conn)
         {
             this.udpClient = udpClient;
             this.conn = conn;
-            cryptoStreams = new[] { conn.ApplicationCryptoStream };
-            availableInfo = cryptoStreams.Select(s => s.AvailableInfo).ToArray();
+            streams = new IFrameStreamer[] { conn.HandshakeCryptoStream, conn.HandshakeAckStream };
+            availableInfo = streams.Select(s => s.AvailableInfo).ToArray();
         }
 
-        private IAsyncEnumerable<AvailableFrameInfo> CryptoStreams => cryptoStreams.Select(s => s.WaitBytesAvailable()).Combine();
+        private IAsyncEnumerable<AvailableFrameInfo> Streams => streams.Select(s => s.WaitBytesAvailable()).Combine();
 
         public async Task Run()
         {
-            await foreach (var stream in CryptoStreams)
+            await foreach (var stream in Streams)
             {
                 var data = await GetFrameData();
-                await SendData(data);
+                if (data.Length > 0)
+                    await SendData(data);
             }
         }
 
@@ -57,9 +62,13 @@ namespace HTTPv3.Quic.Messages.Client
             return buffer.Slice(0, buffer.Length - cur.Length);
         }
 
-        private async Task SendData(Memory<byte> data)
+        public async Task SendData(Memory<byte> data)
         {
-            await Task.Yield();
+            var p = new OutboundHandshakePacket(conn, packetNumber++, data);
+
+            var numBytesLeft = p.Write(packetBuffer, conn.KeyManager.Handshake).Length;
+
+            await udpClient.SendAsync(packetBuffer, BUFFER_SIZE - numBytesLeft);
         }
     }
 }

@@ -37,9 +37,12 @@ namespace HTTPv3.Quic
         public ConnectionId MyConnectionId { get { return IsServer ? ServerConnectionId as ConnectionId : ClientConnectionId as ConnectionId; } }
         public ConnectionId OtherConnectionId { get { return IsServer ? ClientConnectionId as ConnectionId : ServerConnectionId as ConnectionId; } }
 
-        internal CryptoStream InitialStream;
-        internal CryptoStream HandshakeStream;
-        internal CryptoStream ApplicationStream;
+        internal AckStream InitialAckStream;
+        internal AckStream HandshakeAckStream;
+
+        internal CryptoStream InitialCryptoStream;
+        internal CryptoStream HandshakeCryptoStream;
+        internal CryptoStream ApplicationCryptoStream;
 
         private Receiver receiver;
         private InitialSender initialSender;
@@ -54,13 +57,16 @@ namespace HTTPv3.Quic
             ServerName = serverName;
             IsServer = isServer;
 
-            InitialStream = new CryptoStream(cancel);
-            HandshakeStream = new CryptoStream(cancel);
-            ApplicationStream = new CryptoStream(cancel);
+            InitialAckStream = new AckStream(cancel);
+            HandshakeAckStream = new AckStream(cancel);
+
+            InitialCryptoStream = new CryptoStream(cancel);
+            HandshakeCryptoStream = new CryptoStream(cancel);
+            ApplicationCryptoStream = new CryptoStream(cancel);
 
             KeyManager = new KeyManager(clientChosenDestinationId, isServer);
 
-            TLSConn = new TLS.ClientConnection(InitialStream, HandshakeStream, ApplicationStream, OnCipherUpdated, cancel);
+            TLSConn = new TLS.ClientConnection(InitialCryptoStream, HandshakeCryptoStream, ApplicationCryptoStream, OnCipherUpdated, cancel);
 
             receiverTask = StartReceiving();
             senderTask = StartSending();
@@ -82,7 +88,7 @@ namespace HTTPv3.Quic
             var frameData = temp.AsSpan(0, temp.Length - after.Length);
             CryptoFrame frame = new CryptoFrame(0, frameData.ToArray());
 
-            InitialStream.AddToFromAppOffset(frameData.Length);
+            InitialCryptoStream.AddToFromAppOffset(frameData.Length);
 
             var curSpan = frame.Write(buffer, false);
             length = buffer.Length - curSpan.Length;

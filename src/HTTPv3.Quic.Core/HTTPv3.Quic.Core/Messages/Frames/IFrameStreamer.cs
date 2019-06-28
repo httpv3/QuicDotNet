@@ -3,11 +3,11 @@ using System.Threading.Tasks;
 
 namespace HTTPv3.Quic.Messages.Frames
 {
-    public interface IFrameStreamer
+    internal interface IFrameStreamer
     {
         AvailableFrameInfo AvailableInfo { get; }
 
-        Task<CryptoFrame> GetFrame(int numDesiredBytes);
+        Task<IFrame> GetFrame(int numDesiredBytes);
 
         IAsyncEnumerable<AvailableFrameInfo> WaitBytesAvailable();
     }

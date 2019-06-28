@@ -67,8 +67,6 @@ namespace HTTPv3.Quic.Messages.Common
         {
             await foreach (var p in packets)
             {
-                bool needsTobBeAcked = false;
-
                 foreach (var f in p.AsFrames())
                     yield return f;
             }

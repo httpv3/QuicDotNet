@@ -8,9 +8,7 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace HTTPv3.Quic.TLS
 {
@@ -18,6 +16,7 @@ namespace HTTPv3.Quic.TLS
     {
         static public readonly byte[] TLS_LABEL = "74 6C 73 31 33 20".ToByteArrayFromHex();             // "tls13 "
         static public readonly byte[] DERIVED_LABEL = "64 65 72 69 76 65 64".ToByteArrayFromHex();      // "derived"
+        static public readonly byte[] FINISHED_LABEL = "66 69 6E 69 73 68 65 64".ToByteArrayFromHex();      // "finished"
         static public readonly byte[] CLIENT_APP_LABEL = "63 20 61 70 20 74 72 61 66 66 69 63".ToByteArrayFromHex();  // "c ap traffic"
         static public readonly byte[] SERVER_APP_LABEL = "73 20 61 70 20 74 72 61 66 66 69 63".ToByteArrayFromHex();  // "s ap traffic"
         static public readonly byte[] CLIENT_HANDSHAKE_LABEL = "63 20 68 73 20 74 72 61 66 66 69 63".ToByteArrayFromHex();  // "c hs traffic"
@@ -95,7 +94,7 @@ namespace HTTPv3.Quic.TLS
             var curve = SecNamedCurves.GetByName("secp256r1");
             var parameters = new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
 
-            var p = curve.Curve.CreatePoint(new BigInteger(publicKey.Slice(1, 32).ToArray()), new BigInteger(publicKey.Slice(33, 32).ToArray()));
+            var p = curve.Curve.CreatePoint(new BigInteger(1,publicKey.Slice(1, 32).ToArray()), new BigInteger(1,publicKey.Slice(33, 32).ToArray()));
             return new ECPublicKeyParameters(p, parameters);
         }
     }

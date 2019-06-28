@@ -18,20 +18,27 @@ namespace HTTPv3.Quic
         {
             lock (q)
             {
-                q.Enqueue(item);
-
-                if (tsc != null && !tsc.Task.IsCompleted)
+                if (tsc == null)
                 {
-                    tsc.SetResult(true);
-                    tsc = null;
+                    q.Enqueue(item);
+                    return;
                 }
+
+                Current = item;
+                tsc.SetResult(true);
+                tsc = null;
             }
         }
 
-        async ValueTask IAsyncDisposable.DisposeAsync()
+        ValueTask IAsyncDisposable.DisposeAsync()
         {
-            await Task.Delay(0);
-            tsc.SetResult(false);
+            if (tsc != null)
+            {
+                tsc.SetResult(false);
+                tsc = null;
+            }
+
+            return new ValueTask(null);
         }
 
         IAsyncEnumerator<T> IAsyncEnumerable<T>.GetAsyncEnumerator(CancellationToken cancellationToken)
@@ -43,18 +50,17 @@ namespace HTTPv3.Quic
         {
             lock (q)
             {
-                if (q.Count == 0)
+                if (q.TryDequeue(out var item))
+                {
+                    Current = item;
+                    tsc = null;
+                    return new ValueTask<bool>(true);
+                }
+                else
                 {
                     tsc = new TaskCompletionSource<bool>();
                     return new ValueTask<bool>(tsc.Task);
                 }
-
-                if (q.TryDequeue(out var item))
-                {
-                    Current = item;
-                }
-
-                return new ValueTask<bool>(true);
             }
         }
     }

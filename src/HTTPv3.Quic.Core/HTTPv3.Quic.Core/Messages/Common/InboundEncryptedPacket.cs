@@ -56,6 +56,7 @@ namespace HTTPv3.Quic.Messages.Common
                 try
                 {
                     if (p is InboundEncryptedHandshakePacket)
+                        //continue;
                         await Task.Delay(5000);
                     d = p.AsDecryptedPacket(keyMan);
                 }

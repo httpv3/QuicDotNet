@@ -2,15 +2,7 @@
 using HTTPv3.Quic.TLS.Client;
 using HTTPv3.Quic.TLS.Messages;
 using HTTPv3.Quic.TLS.Messages.Extensions;
-using Org.BouncyCastle.Asn1.Nist;
-using Org.BouncyCastle.Asn1.X9;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Agreement;
-using Org.BouncyCastle.Crypto.Agreement.Kdf;
-using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Security;
-using Org.BouncyCastle.X509;
 using System;
 using System.Security.Cryptography;
 using System.Threading;
@@ -26,6 +18,7 @@ namespace HTTPv3.Quic.TLS
         public CancellationToken cancel;
 
         private InitialProcessor InitialStream;
+        private HandshakeProcessor HandshakeStream;
 
         public byte[] Random = new byte[Random_NumBytes];
         public byte[] LegacySessionId = new byte[LegacySessionId_NumBytes];
@@ -33,7 +26,15 @@ namespace HTTPv3.Quic.TLS
         public ECPrivateKeyParameters MyKey;
         public KeyShare MyKeyShare;
 
-        private byte[] Messages = new byte[0];
+        public byte[] ClientHelloBytes = new byte[0];
+        public byte[] ServerHelloBytes = new byte[0];
+        public byte[] EncryptedExtensionsBytes = new byte[0];
+        public byte[] CertificateBytes = new byte[0];
+        public byte[] CertificateVerifyBytes = new byte[0];
+        public byte[] ServerFinishedBytes = new byte[0];
+
+        public byte[] client_handshake_traffic_secret = new byte[0];
+        public byte[] server_handshake_traffic_secret = new byte[0];
 
         Task readerTask;
 
@@ -45,13 +46,14 @@ namespace HTTPv3.Quic.TLS
             this.cancel = cancel;
 
             InitialStream = new InitialProcessor(this, initial);
+            HandshakeStream = new HandshakeProcessor(this, handshake);
 
             readerTask = StartReading();
         }
 
         private Task StartReading()
         {
-            return Task.WhenAll(InitialStream.Run());
+            return Task.WhenAll(InitialStream.Run(), HandshakeStream.Run());
         }
 
         internal Span<byte> WriteClientHello(in Span<byte> buffer, string serverName, params UnknownExtension[] unknownExtensions)
@@ -79,7 +81,7 @@ namespace HTTPv3.Quic.TLS
 
             var ret = hello.Write(buffer);
 
-            AddProcessedMessage(buffer.Subtract(ret));
+            ClientHelloBytes = buffer.Subtract(ret).ToArray();
 
             return ret;
         }
@@ -97,16 +99,18 @@ namespace HTTPv3.Quic.TLS
             };
         }
 
-        public void AddProcessedMessage(in ReadOnlySpan<byte> message)
+        public byte[] GetHashOfProcessedHelloMessages()
         {
-            var buffer = new byte[Messages.Length + message.Length];
-            buffer.AsSpan().Write(Messages).Write(message);
-            Messages = buffer;
+            var bytes = new byte[ClientHelloBytes.Length + ServerHelloBytes.Length];
+            bytes.AsSpan().Write(ClientHelloBytes).Write(ServerHelloBytes);
+            return CryptoHelper.ComputeSha256Hash(bytes);
         }
 
-        public byte[] GetHashOfProcessedMessage()
+        public byte[] GetHashOfProcessedHandshakeMessages()
         {
-            return CryptoHelper.ComputeSha256Hash(Messages);
+            var bytes = new byte[ClientHelloBytes.Length + ServerHelloBytes.Length + EncryptedExtensionsBytes.Length + CertificateBytes.Length + CertificateVerifyBytes.Length + ServerFinishedBytes.Length];
+            bytes.AsSpan().Write(ClientHelloBytes).Write(ServerHelloBytes).Write(EncryptedExtensionsBytes).Write(CertificateBytes).Write(CertificateVerifyBytes).Write(ServerFinishedBytes);
+            return CryptoHelper.ComputeSha256Hash(bytes);
         }
     }
 }

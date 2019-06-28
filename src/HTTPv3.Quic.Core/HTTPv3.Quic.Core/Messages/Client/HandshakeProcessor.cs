@@ -20,13 +20,15 @@ namespace HTTPv3.Quic.Messages.Client
         {
             foreach (var frame in packet.AsFrames())
                 await Process(frame);
+
+            conn.HandshakeAckStream.NewPacketProcessed(packet.EncryptedPacket.PacketNum, packet.EncryptedPacket.InboundDatagram.Recieved);
         }
 
         public async Task Process(IFrame frame)
         {
             if (frame is CryptoFrame)
             {
-                await conn.HandshakeStream.AddFrame(frame as CryptoFrame);
+                await conn.HandshakeCryptoStream.AddFrame(frame as CryptoFrame);
                 return;
             }
         }

@@ -20,7 +20,7 @@ namespace HTTPv3.Quic.Messages.Client
         Connection conn;
         uint packetNumber = 0;
 
-        CryptoStream[] cryptoStreams;
+        IFrameStreamer[] streams;
         AvailableFrameInfo[] availableInfo;
         byte[] packetBuffer = new byte[BUFFER_SIZE];
 
@@ -28,18 +28,19 @@ namespace HTTPv3.Quic.Messages.Client
         {
             this.udpClient = udpClient;
             this.conn = conn;
-            cryptoStreams = new[] { conn.InitialStream };
-            availableInfo = cryptoStreams.Select(s => s.AvailableInfo).ToArray();
+            streams = new IFrameStreamer[] { conn.InitialCryptoStream, conn.InitialAckStream };
+            availableInfo = streams.Select(s => s.AvailableInfo).ToArray();
         }
 
-        private IAsyncEnumerable<AvailableFrameInfo> CryptoStreams => cryptoStreams.Select(s => s.WaitBytesAvailable()).Combine();
+        private IAsyncEnumerable<AvailableFrameInfo> Streams => streams.Select(s => s.WaitBytesAvailable()).Combine();
 
         public async Task Run()
         {
-            await foreach (var stream in CryptoStreams)
+            await foreach (var stream in Streams)
             {
                 var data = await GetFrameData();
-                await SendData(data);
+                if (data.Length > 0)
+                    await SendData(data);
             }
         }
 
