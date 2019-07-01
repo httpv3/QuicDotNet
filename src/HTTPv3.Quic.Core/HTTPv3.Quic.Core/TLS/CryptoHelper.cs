@@ -67,7 +67,13 @@ namespace HTTPv3.Quic.TLS
         {
             ECDHCBasicAgreement agreement = new ECDHCBasicAgreement();
             agreement.Init(myKey);
-            return agreement.CalculateAgreement(sharedKey).ToByteArray();
+            var shared = agreement.CalculateAgreement(sharedKey);
+
+            var arr = shared.ToByteArrayUnsigned();
+            if (arr.Length != 32)
+                throw new Exception("Shared key not 32 bytes.");
+
+            return arr;
         }
 
         static public AsymmetricCipherKeyPair GenerateKeyPair()
@@ -94,7 +100,9 @@ namespace HTTPv3.Quic.TLS
             var curve = SecNamedCurves.GetByName("secp256r1");
             var parameters = new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
 
-            var p = curve.Curve.CreatePoint(new BigInteger(1,publicKey.Slice(1, 32).ToArray()), new BigInteger(1,publicKey.Slice(33, 32).ToArray()));
+            Console.WriteLine("pk=" + BitConverter.ToString(publicKey.ToArray()).Replace("-", " "));
+
+            var p = curve.Curve.CreatePoint(new BigInteger(1, publicKey.Slice(1, 32).ToArray()), new BigInteger(1, publicKey.Slice(33, 32).ToArray()));
             return new ECPublicKeyParameters(p, parameters);
         }
     }

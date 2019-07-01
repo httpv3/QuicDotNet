@@ -25,16 +25,6 @@ namespace HTTPv3.Quic.Messages.Common
 
             cur = base.Write(cur);
 
-            if (Token == null)
-            {
-                cur = cur.WriteVarLengthInt(0);
-            }
-            else
-            {
-                cur = cur.WriteVarLengthInt(Token.Length)
-                         .Write(Token);
-            }
-
             var startOfPN = cur = cur.WriteVarLengthInt(pnLen + keys.GetProtectedLength(Payload.Length));
 
             cur = cur.Write(packetNumber, pnLen);

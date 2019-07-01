@@ -1,5 +1,6 @@
 ﻿using HTTPv3.Quic.Extensions;
 using HTTPv3.Quic.TLS.Messages;
+using System;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
@@ -58,9 +59,13 @@ namespace HTTPv3.Quic.TLS.Client
                 var early_secret = hkdf.Extract(zero_key, new byte[] { 0 });
                 var empty_hash = CryptoHelper.ComputeSha256Hash(new byte[] { });
                 var derived_secret = CryptoHelper.ExpandTLSLabel(hkdf, early_secret, CryptoHelper.DERIVED_LABEL, empty_hash, 32);
-                var handshake_secret = hkdf.Extract(shared_secret, derived_secret);
-                conn.client_handshake_traffic_secret = CryptoHelper.ExpandTLSLabel(hkdf, handshake_secret, CryptoHelper.CLIENT_HANDSHAKE_LABEL, hello_hash, 32);
-                conn.server_handshake_traffic_secret = CryptoHelper.ExpandTLSLabel(hkdf, handshake_secret, CryptoHelper.SERVER_HANDSHAKE_LABEL, hello_hash, 32);
+                conn.handshake_secret = hkdf.Extract(shared_secret, derived_secret);
+                conn.client_handshake_traffic_secret = CryptoHelper.ExpandTLSLabel(hkdf, conn.handshake_secret, CryptoHelper.CLIENT_HANDSHAKE_LABEL, hello_hash, 32);
+                conn.server_handshake_traffic_secret = CryptoHelper.ExpandTLSLabel(hkdf, conn.handshake_secret, CryptoHelper.SERVER_HANDSHAKE_LABEL, hello_hash, 32);
+
+                Console.WriteLine("QUIC_SERVER_HANDSHAKE_TRAFFIC_SECRET " + BitConverter.ToString(conn.Random).Replace("-", "") + " " + BitConverter.ToString(conn.server_handshake_traffic_secret).Replace("-", ""));
+                Console.WriteLine("QUIC_CLIENT_HANDSHAKE_TRAFFIC_SECRET " + BitConverter.ToString(conn.Random).Replace("-", "") + " " + BitConverter.ToString(conn.client_handshake_traffic_secret).Replace("-", ""));
+
 
                 //var masterKey = ecdhe.DeriveKeyTls(theirKey, MASTER_SECRET_LABEL, seed);
                 //master_secret = PRF(premasterKey, "master secret", ClientHello.random + ServerHello.random)

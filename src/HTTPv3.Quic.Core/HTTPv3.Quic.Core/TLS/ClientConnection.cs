@@ -19,6 +19,7 @@ namespace HTTPv3.Quic.TLS
 
         private InitialProcessor InitialStream;
         private HandshakeProcessor HandshakeStream;
+        private ApplicationProcessor ApplicationStream;
 
         public byte[] Random = new byte[Random_NumBytes];
         public byte[] LegacySessionId = new byte[LegacySessionId_NumBytes];
@@ -33,8 +34,12 @@ namespace HTTPv3.Quic.TLS
         public byte[] CertificateVerifyBytes = new byte[0];
         public byte[] ServerFinishedBytes = new byte[0];
 
+        public byte[] handshake_secret = new byte[0];
         public byte[] client_handshake_traffic_secret = new byte[0];
         public byte[] server_handshake_traffic_secret = new byte[0];
+        public byte[] master_secret = new byte[0];
+        public byte[] client_application_traffic_secret = new byte[0];
+        public byte[] server_application_traffic_secret = new byte[0];
 
         Task readerTask;
 
@@ -47,13 +52,14 @@ namespace HTTPv3.Quic.TLS
 
             InitialStream = new InitialProcessor(this, initial);
             HandshakeStream = new HandshakeProcessor(this, handshake);
+            ApplicationStream = new ApplicationProcessor(this, application);
 
             readerTask = StartReading();
         }
 
         private Task StartReading()
         {
-            return Task.WhenAll(InitialStream.Run(), HandshakeStream.Run());
+            return Task.WhenAll(InitialStream.Run(), HandshakeStream.Run(), ApplicationStream.Run());
         }
 
         internal Span<byte> WriteClientHello(in Span<byte> buffer, string serverName, params UnknownExtension[] unknownExtensions)

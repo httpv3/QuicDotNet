@@ -65,8 +65,9 @@ namespace HTTPv3.Quic.Messages.Client
         public async Task SendData(Memory<byte> data)
         {
             var p = new OutboundHandshakePacket(conn, packetNumber++, data);
+            var keys = await conn.KeyManager.Handshake;
 
-            var numBytesLeft = p.Write(packetBuffer, conn.KeyManager.Handshake).Length;
+            var numBytesLeft = p.Write(packetBuffer, keys).Length;
 
             await udpClient.SendAsync(packetBuffer, BUFFER_SIZE - numBytesLeft);
         }

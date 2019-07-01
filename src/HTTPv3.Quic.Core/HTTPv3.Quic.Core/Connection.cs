@@ -39,6 +39,7 @@ namespace HTTPv3.Quic
 
         internal AckStream InitialAckStream;
         internal AckStream HandshakeAckStream;
+        internal AckStream ApplicationAckStream;
 
         internal CryptoStream InitialCryptoStream;
         internal CryptoStream HandshakeCryptoStream;
@@ -47,6 +48,7 @@ namespace HTTPv3.Quic
         private Receiver receiver;
         private InitialSender initialSender;
         private HandshakeSender handshakeSender;
+        private ApplicationSender applicationSender;
 
         private Task receiverTask;
         private Task senderTask;
@@ -60,6 +62,7 @@ namespace HTTPv3.Quic
 
             InitialAckStream = new AckStream(cancel);
             HandshakeAckStream = new AckStream(cancel);
+            ApplicationAckStream = new AckStream(cancel);
 
             InitialCryptoStream = new CryptoStream(cancel);
             HandshakeCryptoStream = new CryptoStream(cancel);
@@ -111,8 +114,9 @@ namespace HTTPv3.Quic
         {
             initialSender = new InitialSender(udpClient, this);
             handshakeSender = new HandshakeSender(udpClient, this);
+            applicationSender = new ApplicationSender(udpClient, this);
 
-            return Task.WhenAll(initialSender.Run(), handshakeSender.Run());
+            return Task.WhenAll(initialSender.Run(), handshakeSender.Run(), applicationSender.Run());
         }
 
         private void OnCipherUpdated(CipherUpdateDetail detail)

@@ -42,15 +42,13 @@ namespace HTTPv3.Quic.Extensions
 
     internal class AsyncCombinedEnumerator<T> : IAsyncEnumerator<T>
     {
-        private IAsyncEnumerator<T>[] streams;
-        private List<(IAsyncEnumerator<T> stream, ValueTask<bool> value, Task<bool> task)> tasks;
+        private List<AsyncCombinedEnumeratorState<T>> states;
 
-        private T current = default;
-        public T Current => current;
+        public T Current { get; private set; } = default;
 
         public AsyncCombinedEnumerator(CancellationToken cancellationToken, params IAsyncEnumerable<T>[] streams)
         {
-            this.streams = streams.Select(s => s.GetAsyncEnumerator(cancellationToken)).ToArray();
+            states = streams.Select(s => new AsyncCombinedEnumeratorState<T>(s.GetAsyncEnumerator(cancellationToken))).ToList();
         }
 
         public ValueTask DisposeAsync()
@@ -60,29 +58,49 @@ namespace HTTPv3.Quic.Extensions
 
         public async ValueTask<bool> MoveNextAsync()
         {
-            if (tasks == null)
-                tasks = streams.Select(s => GetTask(s)).ToList();
-
-            if (tasks.Count > 0)
+            while (true)
             {
-                var t = await Task.WhenAny(tasks.Select(p => p.task));
+                if (states.Count == 0)
+                    return false;
 
-                var next = tasks.First(p => p.task == t);
-                tasks.Remove(next);
+                foreach (var state in states)
+                    state.MoveNextIfNeeded();
 
-                current = next.stream.Current;
+                var completedTask = await Task.WhenAny(states.Select(s => s.Task));
 
-                if (t.Result) // There is more
-                    tasks.Add(GetTask(next.stream));
+                var completedState = states.First(s => s.Task == completedTask);
+                if (completedTask.Result == false) // There is no more
+                {
+                    states.Remove(completedState);
+                    continue;
+                }
+
+                Current = completedState.Stream.Current;
+
+                return true;
             }
+        }
+    }
 
-            return tasks.Count > 0;
+    internal class AsyncCombinedEnumeratorState<T>
+    {
+        public IAsyncEnumerator<T> Stream;
+        public ValueTask<bool> Value = default;
+        public Task<bool> Task = null;
+
+        public AsyncCombinedEnumeratorState(IAsyncEnumerator<T> stream)
+        {
+            Stream = stream;
         }
 
-        private (IAsyncEnumerator<T> stream, ValueTask<bool> value, Task<bool> task) GetTask(IAsyncEnumerator<T> stream)
+        internal void MoveNextIfNeeded()
         {
-            var val = stream.MoveNextAsync();
-            return (stream, val, val.AsTask());
+            if (Task != null)
+                if (!Task.IsCompleted)
+                    return;
+
+            Value = Stream.MoveNextAsync();
+            Task = Value.AsTask();
         }
     }
 }

@@ -36,7 +36,9 @@ namespace HTTPv3.Quic.Messages.Common
             }
             else
             {
-                return InboundEncryptedShortPacket.Parse(start, cur, out packet);
+                packet = null;
+                return default;
+                //return InboundEncryptedShortPacket.Parse(start, cur, out packet);
             }
         }
 
@@ -55,9 +57,6 @@ namespace HTTPv3.Quic.Messages.Common
                 InboundPacket d = null;
                 try
                 {
-                    if (p is InboundEncryptedHandshakePacket)
-                        //continue;
-                        await Task.Delay(5000);
                     d = p.AsDecryptedPacket(keyMan);
                 }
                 catch

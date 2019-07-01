@@ -58,6 +58,8 @@ namespace HTTPv3.Quic
 
             var data = res.Buffer.Slice(0, len).ToArray();
 
+            fromApp.Reader.AdvanceTo(res.Buffer.GetPosition(len));
+
             var ret = new CryptoFrame(fromAppOffset, data);
 
             fromAppOffset += (ulong)len;
@@ -68,14 +70,14 @@ namespace HTTPv3.Quic
         public async IAsyncEnumerable<AvailableFrameInfo> WaitBytesAvailable()
         {
             var res = await fromApp.Reader.ReadAsync(cancel);
-            while (!res.IsCanceled)
-            {
-                SetAvailable(res.Buffer.Length);
+            if (res.IsCanceled)
+                yield break;
 
-                yield return AvailableInfo;
+            SetAvailable(res.Buffer.Length);
 
-                res = await fromApp.Reader.ReadAsync(cancel);
-            }
+            fromApp.Reader.AdvanceTo(res.Buffer.GetPosition(0));
+
+            yield return AvailableInfo;
         }
 
         internal void AddToFromAppOffset(int offset)

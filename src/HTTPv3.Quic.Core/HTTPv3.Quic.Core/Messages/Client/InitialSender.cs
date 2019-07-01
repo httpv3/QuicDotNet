@@ -41,6 +41,7 @@ namespace HTTPv3.Quic.Messages.Client
                 var data = await GetFrameData();
                 if (data.Length > 0)
                     await SendData(data);
+                return;
             }
         }
 

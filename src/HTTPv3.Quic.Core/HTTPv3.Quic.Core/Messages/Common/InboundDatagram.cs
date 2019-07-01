@@ -23,6 +23,8 @@ namespace HTTPv3.Quic.Messages.Common
                 try
                 {
                     cur = InboundEncryptedPacket.Parse(cur, out p);
+                    if (p == null)
+                        yield break;
                 }
                 catch
                 {
