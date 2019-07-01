@@ -60,24 +60,24 @@ namespace HTTPv3.Quic
             ServerName = serverName;
             IsServer = isServer;
 
-            InitialAckStream = new AckStream(cancel);
-            HandshakeAckStream = new AckStream(cancel);
-            ApplicationAckStream = new AckStream(cancel);
-
-            InitialCryptoStream = new CryptoStream(cancel);
-            HandshakeCryptoStream = new CryptoStream(cancel);
-            ApplicationCryptoStream = new CryptoStream(cancel);
-
             KeyManager = new KeyManager(clientChosenDestinationId, isServer);
-
-            TLSConn = new TLS.ClientConnection(InitialCryptoStream, HandshakeCryptoStream, ApplicationCryptoStream, OnCipherUpdated, cancel);
-
-            receiverTask = StartReceiving();
-            senderTask = StartSending();
         }
 
         internal async Task SendConnect()
         {
+            InitialAckStream = new AckStream(Cancel);
+            HandshakeAckStream = new AckStream(Cancel);
+            ApplicationAckStream = new AckStream(Cancel);
+
+            InitialCryptoStream = new CryptoStream(Cancel);
+            HandshakeCryptoStream = new CryptoStream(Cancel);
+            ApplicationCryptoStream = new CryptoStream(Cancel);
+
+            TLSConn = new TLS.ClientConnection(InitialCryptoStream, HandshakeCryptoStream, ApplicationCryptoStream, OnCipherUpdated, Cancel);
+
+            receiverTask = StartReceiving();
+            senderTask = StartSending();
+
             var buffer = new byte[1500];
 
             WriteConnect(buffer, out int len);

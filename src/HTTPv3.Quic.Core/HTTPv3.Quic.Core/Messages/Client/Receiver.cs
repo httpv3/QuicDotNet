@@ -50,7 +50,7 @@ namespace HTTPv3.Quic.Messages.Client
             }
         }
 
-        private async IAsyncEnumerable<InboundDatagram> GetDatagrams()
+        internal async IAsyncEnumerable<InboundDatagram> GetDatagrams()
         {
             while (!conn.Cancel.IsCancellationRequested)
             {

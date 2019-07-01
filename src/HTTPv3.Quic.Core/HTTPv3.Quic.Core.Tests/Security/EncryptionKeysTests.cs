@@ -16,8 +16,9 @@ namespace HTTPv3.Quic.Security
         public void HappyPathSet1()
         {
             var set = MessageSets.Set1;
+            bool first = false;
 
-            foreach (var file in set.Take(1))
+            foreach (var file in set.Skip(2))
             {
                 var decConn = file.FromClient ? set.ServerConnection : set.ClientConnection;
                 var encConn = file.FromClient ? set.ClientConnection : set.ServerConnection;
@@ -29,7 +30,12 @@ namespace HTTPv3.Quic.Security
                 {
                     var decrypted = packet.AsDecryptedPacket(decConn.KeyManager);
 
-                    encConn.ServerConnectionId = new ServerConnectionId(decrypted.EncryptedPacket.DestId.ToArray());
+                    ServerConnectionId savedConnId = null;
+                    if (first)
+                    {
+                        savedConnId = set.ClientConnection.ServerConnectionId;
+                        set.ClientConnection.ServerConnectionId = new ServerConnectionId(decrypted.EncryptedPacket.DestId.ToArray());
+                    }
 
                     var outbound = new OutboundInitialPacket(encConn, decrypted.EncryptedPacket.PacketNum, decrypted.Payload);
 
@@ -39,6 +45,12 @@ namespace HTTPv3.Quic.Security
                     var actual = span.Subtract(left).ToArray();
 
                     Assert.IsTrue(expected.SequenceEqual(actual));
+
+                    if (first)
+                    {
+                        set.ClientConnection.ServerConnectionId = savedConnId;
+                        first = false;
+                    }
                 }
             }
         }

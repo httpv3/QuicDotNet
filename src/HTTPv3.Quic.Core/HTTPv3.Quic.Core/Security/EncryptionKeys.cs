@@ -65,13 +65,11 @@ namespace HTTPv3.Quic.Security
             DecryptionHP = ExpandLabel(hkdf, decSecret, keySize, QuicHP);
 
             var aes = Aes.Create();
-//            aes.BlockSize = keySize;
+            //aes.KeySize = keySize;
             aes.Mode = CipherMode.ECB;
             aes.Padding = PaddingMode.None;
 
             aes.GenerateIV();
-
-            var key = EncryptionHP;
 
             Encryption_AES_ECB = aes.CreateEncryptor(EncryptionHP, aes.IV);
             Decryption_AES_ECB = aes.CreateEncryptor(DecryptionHP, aes.IV);
