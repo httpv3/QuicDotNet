@@ -100,8 +100,6 @@ namespace HTTPv3.Quic.TLS
             var curve = SecNamedCurves.GetByName("secp256r1");
             var parameters = new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H);
 
-            Console.WriteLine("pk=" + BitConverter.ToString(publicKey.ToArray()).Replace("-", " "));
-
             var p = curve.Curve.CreatePoint(new BigInteger(1, publicKey.Slice(1, 32).ToArray()), new BigInteger(1, publicKey.Slice(33, 32).ToArray()));
             return new ECPublicKeyParameters(p, parameters);
         }

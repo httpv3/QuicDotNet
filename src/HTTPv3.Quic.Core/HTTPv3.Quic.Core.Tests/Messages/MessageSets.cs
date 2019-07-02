@@ -18,7 +18,7 @@ namespace HTTPv3.Quic.Messages
     class MessageSets : IEnumerable<DataFile>
     {
         public static MessageSets Set1 = new MessageSets(1);
-        //public static MessageSets Set2 = new MessageSets(2);
+        public static MessageSets Set2 = new MessageSets(2);
 
         private readonly Dictionary<int, DataFile> files = new Dictionary<int, DataFile>();
         public DataFile this[int i] { get { return files[i].Clone(); } }

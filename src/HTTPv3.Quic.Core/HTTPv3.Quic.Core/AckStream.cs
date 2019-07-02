@@ -1,4 +1,5 @@
-﻿using HTTPv3.Quic.Messages.Frames;
+﻿using HTTPv3.Quic.Messages.Common;
+using HTTPv3.Quic.Messages.Frames;
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -36,12 +37,13 @@ namespace HTTPv3.Quic
             return Task.FromResult(ret);
         }
 
-        internal void NewPacketProcessed(ulong packetNumber, DateTime received)
+        internal void NewPacketProcessed(InboundPacket packet)
         {
+
             var frame = new AckFrame()
             {
-                LargestAcknowledged = packetNumber,
-                Delay = (ulong)((DateTime.UtcNow - received).TotalMilliseconds * 1000)
+                LargestAcknowledged = packet.EncryptedPacket.PacketNum,
+                Delay = (ulong)((packet.Processed - packet.EncryptedPacket.InboundDatagram.Recieved).TotalMilliseconds * 1000)
             };
 
             frames.Add(frame);
@@ -54,8 +56,7 @@ namespace HTTPv3.Quic
                 currentFrame = frame;
                 SetAvailable();
 
-                while (!AvailableInfo.Empty)
-                    yield return AvailableInfo;
+                yield return AvailableInfo;
             }
         }
 

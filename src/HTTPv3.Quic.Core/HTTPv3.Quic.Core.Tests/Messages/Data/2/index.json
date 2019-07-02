@@ -1,0 +1,20 @@
+{
+  "clientId": "ac8d2d90adf90296",
+  "clientIp": "0a000005",
+  "serverId": "08438d193e28851d",
+  "secrets": {
+    "initial": "6ca45783d61ddd3f",
+    "handshake": {
+      "client": "3B339B8C6C804809A6F11F9FA659058FFFC8F9AA711C64A6E29B471BC24B3D23",
+      "server": "AB42F5D474EF498B9165DCB6A286AB46F2615F07DA9CA2893E223BF3BC3E398B",
+      "cipherSuite": "TLS_AES_128_GCM_SHA256"
+    },
+    "application": [
+      {
+        "client": "BC9773A35DE9ECB385616DAFC248D67E912BB238FDC526E2851760A3443AC57C",
+        "server": "2FF04FFCFC5470A7A55B8BDD2697A1D9B3001E3CC1A4784E5F40E362C9FD62B7",
+        "cipherSuite": "TLS_AES_128_GCM_SHA256"
+      }
+    ]
+  }
+}

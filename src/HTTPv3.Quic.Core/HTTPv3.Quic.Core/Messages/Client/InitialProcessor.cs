@@ -24,8 +24,6 @@ namespace HTTPv3.Quic.Messages.Client
 
             foreach (var frame in packet.AsFrames())
                 await Process(frame);
-
-            conn.InitialAckStream.NewPacketProcessed(packet.EncryptedPacket.PacketNum, packet.EncryptedPacket.InboundDatagram.Recieved);
         }
 
         public async Task Process(IFrame frame)

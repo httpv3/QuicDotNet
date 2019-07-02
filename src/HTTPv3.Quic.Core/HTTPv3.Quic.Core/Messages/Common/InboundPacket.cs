@@ -14,6 +14,8 @@ namespace HTTPv3.Quic.Messages.Common
         public InboundEncryptedPacket EncryptedPacket;
 
         public ReadOnlyMemory<byte> Payload;
+        public bool AckEliciting = false;
+        public DateTime Processed;
 
         public InboundPacket(InboundEncryptedPacket packet, EncryptionKeys keys)
         {
@@ -43,6 +45,7 @@ namespace HTTPv3.Quic.Messages.Common
                             cur = AckFrame.Parse(cur, out f);
                             break;
                         case FrameType.Crypto:
+                            AckEliciting = true;
                             cur = CryptoFrame.Parse(cur, out f);
                             break;
                         default:

@@ -10,7 +10,7 @@ namespace HTTPv3.Quic
     {
         public readonly static ConnectionId Empty = new ConnectionId(new byte[0]);
 
-        public const int DefaultLength = 4;
+        public static int DefaultLength = 4;
         private static IFNV1 Hasher = FNV1Factory.Instance.Create(FNVConfig.GetPredefinedConfig(32));
 
         public readonly byte[] ConnectionIdBytes;
@@ -36,7 +36,12 @@ namespace HTTPv3.Quic
             }
         }
 
-        protected static byte[] GenerateBytes(int length = DefaultLength)
+        protected static byte[] GenerateBytes()
+        {
+            return GenerateBytes(DefaultLength);
+        }
+
+        protected static byte[] GenerateBytes(int length)
         {
             var bytes = new byte[length];
 

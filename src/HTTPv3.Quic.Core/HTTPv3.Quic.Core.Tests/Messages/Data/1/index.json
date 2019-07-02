@@ -5,8 +5,8 @@
   "secrets": {
     "initial": "d5c986791d0293ec",
     "handshake": {
-      "client": "e42d916b5191ec9092151b5b96ac53059fc0157706d91675b1b5ff1479fa38462a42e8bb463eaa054c34909fd3b20358",
-      "server": "2dae23de06bb5f69a76efe0f0a49899e072d0730a0a1cd5b5e5be52b951440fabca84e59f8926e340477b1a29a88d9c8",
+      "client": "7fea7bc747bead8e50265d3423ea7be01744291cdb8b1a7aac174c72718ec50f5da9063db1ab2a42dd85cfc0301706ad",
+      "server": "e42d916b5191ec9092151b5b96ac53059fc0157706d91675b1b5ff1479fa38462a42e8bb463eaa054c34909fd3b20358",
       "cipherSuite": "TLS_AES_256_GCM_SHA384"
     },
     "application": [

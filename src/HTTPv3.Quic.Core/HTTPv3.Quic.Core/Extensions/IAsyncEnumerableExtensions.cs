@@ -8,7 +8,7 @@ using System.Threading.Tasks.Sources;
 
 namespace HTTPv3.Quic.Extensions
 {
-    internal static class IAsyncEnumerableExtensions
+    public static class IAsyncEnumerableExtensions
     {
         public static IAsyncEnumerable<T> Combine<T>(this IEnumerable<IAsyncEnumerable<T>> streams)
         {

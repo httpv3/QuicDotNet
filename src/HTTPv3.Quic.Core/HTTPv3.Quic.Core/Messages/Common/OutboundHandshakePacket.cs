@@ -19,7 +19,7 @@ namespace HTTPv3.Quic.Messages.Common
         {
             byte firstByte = 0xe0;
             int pnLen = GetPacketNumberLength();
-            firstByte |= (byte)(pnLen - 1);
+            firstByte ^= (byte)(pnLen - 1);
 
             var cur = buffer.Write(firstByte);
 
@@ -38,9 +38,9 @@ namespace HTTPv3.Quic.Messages.Common
             var sample = encryptedPayload.AsSpan().Slice(4 - pnLen, 16);
             var mask = keys.ComputeEncryptionHeaderProtectionMask(sample);
 
-            header[0] |= (byte)(mask[0] & 0xf);
+            header[0] ^= (byte)(mask[0] & 0xf);
             for (int i = 0; i < pnLen; i++)
-                startOfPN[i] |= mask[1 + i];
+                startOfPN[i] ^= mask[1 + i];
 
             return cur;
         }

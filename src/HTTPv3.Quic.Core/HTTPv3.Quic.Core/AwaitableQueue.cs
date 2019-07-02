@@ -7,16 +7,27 @@ using System.Threading.Tasks;
 
 namespace HTTPv3.Quic
 {
-    class AwaitableQueue<T> : IAsyncEnumerable<T>, IAsyncEnumerator<T>
+    public class AwaitableQueue<T> : IAsyncEnumerable<T>, IAsyncEnumerator<T>
     {
+        private readonly CancellationToken cancel;
+
+        object lockVar = new object();
         ConcurrentQueue<T> q = new ConcurrentQueue<T>();
         TaskCompletionSource<bool> tsc = null;
 
+        public int Backlog => q.Count;
+
         public T Current { get; private set; } = default(T);
+
+        public AwaitableQueue(CancellationToken cancel = default)
+        {
+            this.cancel = cancel;
+            cancel.Register(()=> { if (tsc != null) tsc.TrySetCanceled(cancel); });
+        }
 
         public void Add(T item)
         {
-            lock (q)
+            lock (lockVar)
             {
                 if (tsc == null)
                 {
@@ -25,8 +36,9 @@ namespace HTTPv3.Quic
                 }
 
                 Current = item;
-                tsc.SetResult(true);
+                var t = tsc;
                 tsc = null;
+                t.SetResult(true);
             }
         }
 
@@ -34,8 +46,9 @@ namespace HTTPv3.Quic
         {
             if (tsc != null)
             {
-                tsc.SetResult(false);
+                var t = tsc;
                 tsc = null;
+                t.SetResult(false);
             }
 
             return new ValueTask(null);
@@ -48,7 +61,10 @@ namespace HTTPv3.Quic
 
         ValueTask<bool> IAsyncEnumerator<T>.MoveNextAsync()
         {
-            lock (q)
+            if (cancel.IsCancellationRequested)
+                return new ValueTask<bool>(true);
+
+            lock (lockVar)
             {
                 if (q.TryDequeue(out var item))
                 {

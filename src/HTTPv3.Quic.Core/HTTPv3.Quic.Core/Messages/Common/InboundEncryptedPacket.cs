@@ -10,7 +10,6 @@ namespace HTTPv3.Quic.Messages.Common
     internal abstract class InboundEncryptedPacket
     {
         public InboundDatagram InboundDatagram;
-        public DateTime Processed;
 
         public bool IsProtected = true;
         public ReadOnlyMemory<byte> DestId;
@@ -36,9 +35,7 @@ namespace HTTPv3.Quic.Messages.Common
             }
             else
             {
-                packet = null;
-                return default;
-                //return InboundEncryptedShortPacket.Parse(start, cur, out packet);
+                return InboundEncryptedShortPacket.Parse(start, cur, out packet);
             }
         }
 

@@ -4,38 +4,23 @@ using System;
 
 namespace HTTPv3.Quic.Messages.Common
 {
-    class OutboundInitialPacket : OutboundLongPacket
+    class OutboundShortPacket : OutboundPacket
     {
         public ReadOnlyMemory<byte> Payload;
-        public byte[] Token;
 
-        public OutboundInitialPacket(Connection conn, uint packetNumber, ReadOnlyMemory<byte> payload, byte[] token = null) : base(conn, packetNumber)
+        public OutboundShortPacket(Connection conn, uint packetNumber, ReadOnlyMemory<byte> payload) : base(conn, packetNumber)
         {
             Payload = payload;
-            Token = token;
         }
 
         public Span<byte> Write(in Span<byte> buffer, EncryptionKeys keys)
         {
-            byte firstByte = 0xc0;
+            byte firstByte = 0x40;
             int pnLen = GetPacketNumberLength();
             firstByte ^= (byte)(pnLen - 1);
 
             var cur = buffer.Write(firstByte);
-
-            cur = base.Write(cur);
-
-            if (Token == null)
-            {
-                cur = cur.WriteVarLengthInt(0);
-            }
-            else
-            {
-                cur = cur.WriteVarLengthInt(Token.Length)
-                         .Write(Token);
-            }
-
-            var startOfPN = cur = cur.WriteVarLengthInt(pnLen + keys.GetProtectedLength(Payload.Length));
+            var startOfPN = cur = conn.OtherConnectionId.Write(cur);
 
             cur = cur.Write(packetNumber, pnLen);
 
@@ -48,7 +33,7 @@ namespace HTTPv3.Quic.Messages.Common
             var sample = encryptedPayload.AsSpan().Slice(4 - pnLen, 16);
             var mask = keys.ComputeEncryptionHeaderProtectionMask(sample);
 
-            header[0] ^= (byte)(mask[0] & 0xf);
+            header[0] ^= (byte)(mask[0] & 0x1f);
             for (int i = 0; i < pnLen; i++)
                 startOfPN[i] ^= mask[1 + i];
 

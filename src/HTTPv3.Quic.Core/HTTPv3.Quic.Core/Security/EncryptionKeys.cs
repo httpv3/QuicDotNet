@@ -2,6 +2,7 @@
 using HTTPv3.Quic.TLS;
 using HTTPv3.Quic.TLS.Messages.Extensions;
 using System;
+using System.Diagnostics;
 using System.Security.Cryptography;
 
 namespace HTTPv3.Quic.Security
@@ -33,6 +34,7 @@ namespace HTTPv3.Quic.Security
         public readonly ICryptoTransform Decryption_AES_ECB;
 
         readonly ushort keySize;
+        readonly ushort tagSize;
 
         protected EncryptionKeys(EncryptionState state, in byte[] encSecret, in byte[] decSecret, CipherSuite cipherSuite)
         {
@@ -46,10 +48,12 @@ namespace HTTPv3.Quic.Security
                 case CipherSuite.TLS_AES_128_GCM_SHA256:
                     hkdf = Hkdf256;
                     keySize = 16;
+                    tagSize = 16;
                     break;
                 case CipherSuite.TLS_AES_256_GCM_SHA384:
                     hkdf = Hkdf384;
                     keySize = 32;
+                    tagSize = 16;
                     break;
                 default:
                     throw new NotImplementedException($"Cipher Suite: {cipherSuite.ToString()} not implemented.");
@@ -95,7 +99,8 @@ namespace HTTPv3.Quic.Security
             for (int i = 0; i < DecryptionIV.Length; i++)
                 nonce[i] ^= DecryptionIV[i];
 
-            var tag = encryptedPayload.Read(encryptedPayload.Length - keySize, out ReadOnlySpan<byte> cipherText);
+
+            var tag = encryptedPayload.Read(encryptedPayload.Length - tagSize, out ReadOnlySpan<byte> cipherText);
             var plainText = new byte[cipherText.Length];
 
             using (AesGcm aesGcm = new AesGcm(DecryptionKey))
@@ -126,7 +131,7 @@ namespace HTTPv3.Quic.Security
 
         public int GetProtectedLength(int unprotectedLength)
         {
-            return unprotectedLength + keySize;
+            return unprotectedLength + tagSize;
         }
 
         private byte[] ExpandLabel(AronParker.Hkdf.Hkdf hkdf, byte[] secret, ushort length, ReadOnlySpan<byte> label)

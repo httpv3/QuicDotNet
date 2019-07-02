@@ -16,7 +16,7 @@ namespace HTTPv3.Quic.Messages.Common
 
             packet.ProtectedPNandPayload = current.Read(ConnectionId.DefaultLength, out packet.DestId);
 
-            return ReadOnlyMemory<byte>.Empty;
+            return default;
         }
 
         public override InboundPacket AsDecryptedPacket(KeyManager keyMan)

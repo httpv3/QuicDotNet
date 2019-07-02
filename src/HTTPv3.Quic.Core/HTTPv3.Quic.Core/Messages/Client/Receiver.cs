@@ -40,13 +40,29 @@ namespace HTTPv3.Quic.Messages.Client
                         await handshake.Process(packet);
                         break;
                     case EncryptionState.Application:
-                        //await application.Process(packet);
+                        await application.Process(packet);
                         break;
                 }
 
-                packet.EncryptedPacket.Processed = DateTime.UtcNow;
+                packet.Processed = DateTime.UtcNow;
 
-                //Add packet to ACKHandler
+                AckPacket(packet);
+            }
+        }
+
+        private void AckPacket(InboundPacket packet)
+        {
+            switch (packet.KeySpace)
+            {
+                case EncryptionState.Initial:
+                    conn.InitialAckStream.NewPacketProcessed(packet);
+                    break;
+                case EncryptionState.Handshake:
+                    conn.HandshakeAckStream.NewPacketProcessed(packet);
+                    break;
+                case EncryptionState.Application:
+                    conn.ApplicationAckStream.NewPacketProcessed(packet);
+                    break;
             }
         }
 
